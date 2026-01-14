@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-com Stylist v2.0</title> 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.395.0/dist/umd/lucide.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        .tool-button {
+            @apply flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm text-gray-700 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+        }
+        .tool-button-icon {
+            @apply h-8 w-8 mb-2;
+        }
+        .tool-button-label {
+            @apply text-sm font-medium text-center;
+        }
+
+        #loader {
+            @apply fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center backdrop-blur-sm;
+            display: none;
+        }
+        .spinner {
+            @apply w-16 h-16 border-4 border-t-indigo-600 border-gray-200 rounded-full animate-spin;
+            border-top-color: #4f46e5;
+        }
+
+        .checkerboard-bg {
+            background-color: #e2e8f0;
+            background-image: linear-gradient(45deg, #cbd5e1 25%, transparent 25%),
+                              linear-gradient(-45deg, #cbd5e1 25%, transparent 25%),
+                              linear-gradient(45deg, transparent 75%, #cbd5e1 75%),
+                              linear-gradient(-45deg, transparent 75%, #cbd5e1 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+        
+        /* Estilo para el input de ropa personalizado */
+        .garment-upload-label {
+            @apply w-full text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-md py-2 px-3 text-center cursor-pointer transition-colors;
+        }
+        
+        /* Ocultar el input[type=file] real */
+        #garmentUpload {
+            display: none;
+        }
+        
+        /* Botón de acción pequeño */
+        .action-button {
+             @apply flex items-center justify-center gap-2 w-full text-center bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors font-medium text-sm;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
+        <header class="p-6 border-b border-gray-200 bg-gray-50">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900">E-com Stylist</h1>
+            <p class="text-gray-600 mt-1">Edición de fotos de productos con IA (Nano-Banana)</p>
+        </header>
+
+        <main class="p-6 md:p-8">
+            
+            <div class="mb-6">
+                <label for="imageUpload" class="block text-lg font-semibold text-gray-800 mb-3">Paso 1: Carga tu imagen (Persona)</label>
+                <div class="flex items-center gap-4">
+                    <input type="file" id="imageUpload" accept="image/png, image/jpeg, image/webp" class="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-indigo-50 file:text-indigo-700
+                        hover:file:bg-indigo-100 transition-colors cursor-pointer"
+                    >
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-lg font-semibold text-gray-800 mb-3">Paso 2: Elige una herramienta</label>
+                <fieldset id="controls" disabled>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        
+                        <button id="btn-square" class="tool-button" data-prompt="cuadrado 500x500">
+                            <i data-lucide="square-aspect-ratio" class="tool-button-icon"></i>
+                            <span class="tool-button-label">Formato Cuadrado<br>(1:1 Expandir)</span>
+                        </button>
+
+                        <button id="btn-vertical" class="tool-button" data-prompt="vertical instagram">
+                            <i data-lucide="rectangle-vertical" class="tool-button-icon"></i>
+                            <span class="tool-button-label">Formato Vertical<br>(4:5 Expandir)</span>
+                        </button>
+
+                        <button id="btn-white-bg" class="tool-button" data-prompt="fondo blanco">
+                            <i data-lucide="image-minus" class="tool-button-icon"></i>
+                            <span class="tool-button-label">Fondo Blanco<br>(Tipo Catálogo)</span>
+                        </button>
+
+                        <button id="btn-smile" class="tool-button" data-prompt="hacer sonreír">
+                            <i data-lucide="smile" class="tool-button-icon"></i>
+                            <span class="tool-button-label">Hacer Sonreír<br>(Sutil)</span>
+                        </button>
+
+                        <!-- MODIFICADO: Herramienta de Carga de Ropa (Virtual Try-On) -->
+                        <div class="tool-button col-span-2 md:col-span-1" style="cursor: default; background-color: #f9fafb; padding-bottom: 12px;">
+                            <span class="tool-button-label mb-2">Virtual Try-On</span>
+                            
+                            <!-- Previsualización de la Prenda -->
+                            <img id="garmentPreview" src="https://placehold.co/100x100/e0e7ff/6366f1?text=Prenda" alt="Prenda" class="w-16 h-16 object-contain rounded-md border border-indigo-200 bg-white mb-3">
+                            
+                            <!-- Input para cargar la Prenda -->
+                            <label for="garmentUpload" class="garment-upload-label mb-2">
+                                <i data-lucide="upload" class="inline-block w-4 h-4 mr-1"></i>
+                                Cargar Prenda
+                            </label>
+                            <input type="file" id="garmentUpload" accept="image/png, image/jpeg, image/webp">
+                            
+                            <!-- Botón de ejecución -->
+                            <button id="btn-virtual-try-on" class="w-full bg-indigo-600 text-white text-sm py-1.5 rounded-md hover:bg-indigo-700 transition-colors">
+                                <i data-lucide="shirt" class="inline-block w-4 h-4 mr-1"></i>
+                                Poner Ropa
+                            </button>
+                        </div>
+
+                    </div>
+                </fieldset>
+            </div>
+
+            <div>
+                <label class="block text-lg font-semibold text-gray-800 mb-3">Paso 3: Resultado</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div>
+                        <h3 class="text-md font-semibold text-gray-700 mb-2 text-center">Original (dentro de 500x500px)</h3>
+                        <div id="previewBox" class="w-[500px] h-[500px] mx-auto bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden checkerboard-bg">
+                            <img id="originalImage" src="https://placehold.co/500x500/f3f4f6/a3a3a3?text=Carga+tu+imagen" alt="Original" class="max-w-full max-h-full object-contain">
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-md font-semibold text-gray-700 mb-2 text-center">Editada</h3>
+                        <div class="w-[500px] h-[500px] mx-auto bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden">
+                            <img id="editedImage" src="https://placehold.co/500x500/f3f4f6/a3a3a3?text=Tu+resultado+IA" alt="Editada" class="max-w-full max-h-full object-contain rounded-lg">
+                        </div>
+                        
+                        <!-- Botones de Acción -->
+                        <div class="mt-4 grid grid-cols-2 gap-4 w-full max-w-[500px] mx-auto">
+                            <a id="downloadLink" href="#" download="edited-image.png" class="action-button bg-green-600 hover:bg-green-700 hidden">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                Descargar
+                            </a>
+                            
+                            <!-- NUEVO: Botón de Reintentar -->
+                            <button id="btn-retry" class="action-button bg-indigo-600 hover:bg-indigo-700 hidden">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                Generar Otra Vez
+                            </button>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div id="errorMessage" class="text-red-600 mt-4 text-center font-medium"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // 1. Inicializar iconos de Lucide
+        lucide.createIcons();
+
+        // 2. Referencias a elementos del DOM
+        const imageUpload = document.getElementById('imageUpload');
+        const originalImage = document.getElementById('originalImage');
+        const editedImage = document.getElementById('editedImage');
+        const controls = document.getElementById('controls');
+        const loader = document.getElementById('loader');
+        const downloadLink = document.getElementById('downloadLink');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Nuevos elementos para Try-On
+        const garmentUpload = document.getElementById('garmentUpload');
+        const garmentPreview = document.getElementById('garmentPreview');
+        const btnVirtualTryOn = document.getElementById('btn-virtual-try-on');
+
+        // Botones de herramientas estándar
+        const btnSquare = document.getElementById('btn-square');
+        const btnVertical = document.getElementById('btn-vertical');
+        const btnWhiteBg = document.getElementById('btn-white-bg');
+        const btnSmile = document.getElementById('btn-smile');
+        
+        // NUEVO: Botón de reintentar
+        const btnRetry = document.getElementById('btn-retry');
+
+        // Variables de estado
+        let base64ImageData = null; // Imagen de la persona
+        let base64GarmentData = null; // Imagen de la prenda
+        let lastApiCall = { type: null, prompt: null }; // Para el botón de reintentar
+
+        // 3. Manejadores de carga de imagen
+
+        // 3a. Imagen Principal (Persona)
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImage.src = e.target.result;
+                base64ImageData = e.target.result.split(',')[1];
+                controls.disabled = false;
+                resetEditedImage();
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        // 3b. Imagen de Prenda (Garment)
+        garmentUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                garmentPreview.src = e.target.result;
+                base64GarmentData = e.target.result.split(',')[1];
+                errorMessage.textContent = '';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // 3c. Función para limpiar el estado de edición
+        function resetEditedImage() {
+            editedImage.src = "https://placehold.co/500x500/f3f4f6/a3a3a3?text=Lista+para+editar";
+            downloadLink.classList.add('hidden');
+            btnRetry.classList.add('hidden');
+            errorMessage.textContent = '';
+            lastApiCall = { type: null, prompt: null };
+        }
+
+
+        // 4. Función de reintento (Exponential Backoff) para la API
+        async function fetchWithBackoff(url, options, maxRetries = 3) {
+            let delay = 1000;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return await response.json();
+                    if (response.status === 429 || response.status >= 500) {
+                        console.warn(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    } else {
+                        throw new Error(`API Error: ${response.statusText} (Status ${response.status})`);
+                    }
+                } catch (error) {
+                    if (i === maxRetries - 1) throw error;
+                    console.warn(`Attempt ${i + 1} network error. Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+        }
+        
+        // 5. El "Cerebro" de la IA (Nuestro prompt de sistema)
+        const SYSTEM_PROMPT = `
+# ROL Y OBJETIVO
+Eres "E-com Stylist", un asistente de IA experto en edición fotográfica para moda y comercio electrónico. Tu objetivo es recibir una o más imágenes y una instrucción de texto. Tu tarea es generar UNA sola imagen de salida que aplique la instrucción de forma precisa, profesional y con calidad de catálogo.
+
+# REGLAS DE CAPACIDAD Y EJECUCIÓN
+
+## 1. Tarea: Expansión Cuadrada (Outpainting)
+* **Instrucción:** "cuadrado 500x500"
+* **Lógica:** Recibes UNA imagen. NO la recortes ni deformes. Expande la imagen (outpainting) rellenando el espacio faltante (lados o arriba/abajo) para crear un formato 1:1. El relleno debe ser coherente con el entorno.
+
+## 2. Tarea: Expansión Vertical (Outpainting)
+* **Instrucción:** "vertical instagram"
+* **Lógica:** Igual que la Tarea 1, pero el objetivo es una relación de aspecto 4:5. Expande la imagen para rellenar ese formato.
+
+## 3. Tarea: Fondo de Catálogo
+* **Instrucción:** "fondo blanco"
+* **Lógica:** Recibes UNA imagen. Realiza una segmentación de alta precisión del sujeto principal. Elimina el fondo original y reemplázalo con un blanco puro (#FFFFFF).
+
+## 4. Tarea: Modificación de Expresión
+* **Instrucción:** "hacer sonreír"
+* **Lógica:** Recibes UNA imagen. Identifica el rostro y modifica sutilmente la expresión para crear una sonrisa natural, sin cambiar la identidad de la persona.
+
+## 5. Tarea: Virtual Try-On (Poner Ropa)
+* **Instrucción:** "virtual try-on" (O cualquier prompt que acompañe a dos imágenes)
+* **Contexto:** Recibirás DOS imágenes: la Imagen 1 (Persona) y la Imagen 2 (Prenda).
+* **Lógica:**
+    1.  Esta es la tarea más importante. Analiza la prenda de la Imagen 2 (ej. una chaqueta en un fondo blanco, en una percha, o incluso en otro modelo).
+    2.  Analiza la persona en la Imagen 1.
+    3.  Tu tarea es "colocar" la prenda de la Imagen 2 sobre la persona de la Imagen 1.
+    4.  Debes ajustar la prenda (forma, perspectiva, iluminación, arrugas) de forma fotorrealista al cuerpo y la pose de la persona en la Imagen 1.
+    5.  Reemplaza la ropa que la persona lleva puesta por la nueva prenda.
+    6.  El rostro de la persona, su peinado y el fondo de la Imagen 1 deben permanecer INTACTOS.
+
+# FORMATO DE SALIDA
+Genera únicamente la imagen editada. No añadas texto, bordes ni marcas de agua.
+`;
+
+
+        // 6. Función GENÉRICA para llamar a la API
+        async function callApi(payload) {
+            
+            // IMPORTANTE: Pega tu clave API de Google AI Studio aquí
+            // Ve a https://aistudio.google.com/ para obtener tu clave
+            // ¡¡¡SÓLO NECESITAS PONERLA AQUÍ UNA VEZ!!!
+            const apiKey = "TU_API_KEY_AQUI"; // <--- ¡REEMPLAZA ESTO!
+
+            // Comprobación de seguridad para la clave API
+            if (apiKey === "TU_API_KEY_AQUI") {
+                errorMessage.textContent = "Error: No has configurado tu API Key en el código (busca 'TU_API_KEY_AQUI').";
+                loader.style.display = 'none';
+                return;
+            }
+
+            loader.style.display = 'flex';
+            errorMessage.textContent = '';
+            editedImage.src = "https://placehold.co/500x500/f3f4f6/a3a3a3?text=Procesando...";
+            downloadLink.classList.add('hidden');
+            btnRetry.classList.add('hidden');
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+
+            try {
+                const result = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // --- LÓGICA DE ERROR MEJORADA ---
+                const candidate = result?.candidates?.[0];
+                const base64Data = candidate?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                if (base64Data) {
+                    // ¡Éxito!
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    editedImage.src = imageUrl;
+                    downloadLink.href = imageUrl;
+                    downloadLink.classList.remove('hidden');
+                    btnRetry.classList.remove('hidden'); // Mostrar botón de reintentar
+                } else {
+                    // --- Diagnóstico de Error Avanzado ---
+                    console.error("Respuesta inesperada de la API:", result);
+                    let errorMsg = "Error: No se pudo generar la imagen.";
+                    
+                    if (!candidate) {
+                        // No hay 'candidate'. Podría ser un error 400 que devolvió JSON.
+                        if (result.error) {
+                            errorMsg += ` Detalles de Google: ${result.error.message}`;
+                        } else {
+                            errorMsg += " La API devolvió una respuesta vacía (sin 'candidates').";
+                        }
+                    } else if (candidate.finishReason && candidate.finishReason !== 'STOP' && candidate.finishReason !== 'MAX_TOKENS') {
+                        // La IA se detuvo por una razón (ej. SAFETY)
+                        errorMsg += ` Razón: La IA bloqueó el resultado (Motivo: ${candidate.finishReason}).`;
+                        if (candidate.safetyRatings) {
+                            errorMsg += " Revisa las calificaciones de seguridad en la consola.";
+                        }
+                    } else {
+                        // Hay 'candidate' pero no hay 'inlineData'
+                        errorMsg += " La API no devolvió datos de imagen ('inlineData') en la respuesta.";
+                    }
+                    
+                    errorMessage.textContent = errorMsg;
+                    // --- Fin del Diagnóstico ---
+                }
+
+            } catch (error) {
+                console.error("Error llamando a la API de Gemini:", error);
+                if (error.message.includes("403")) {
+                     errorMessage.textContent = `Error 403 (Forbidden): Revisa que tu API Key sea correcta y que la API "Generative Language" esté habilitada en tu proyecto de Google Cloud.`;
+                } else {
+                    errorMessage.textContent = `Error al procesar la imagen: ${error.message}`;
+                }
+                editedImage.src = "https://placehold.co/500x500/f3f4f6/a3a3a3?text=Error";
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        // 7. Funciones de ayuda para construir Payloads
+        
+        // 7a. Tareas estándar (1 imagen)
+        function standardTask(promptText) {
+            if (!base64ImageData) {
+                errorMessage.textContent = "Por favor, carga primero la imagen de la persona.";
+                return;
+            }
+            // Guardar para "Reintentar"
+            lastApiCall = { type: 'standard', prompt: promptText };
+            
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: promptText },
+                        { inlineData: { mimeType: "image/png", data: base64ImageData } }
+                    ]
+                }],
+                generationConfig: { responseModalities: ['IMAGE'] },
+                systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            };
+            callApi(payload);
+        }
+        
+        // 7b. Tarea Virtual Try-On (2 imágenes)
+        function virtualTryOnTask() {
+            if (!base64ImageData) {
+                errorMessage.textContent = "Por favor, carga primero la imagen de la persona.";
+                return;
+            }
+            if (!base64GarmentData) {
+                errorMessage.textContent = "Por favor, carga la imagen de la prenda.";
+                garmentUpload.click(); // Abrir el diálogo para cargarla
+                return;
+            }
+            
+            // Guardar para "Reintentar"
+            lastApiCall = { type: 'try-on', prompt: null };
+
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: "virtual try-on: Coloca la prenda de la segunda imagen en la persona de la primera imagen." },
+                        { inlineData: { mimeType: "image/png", data: base64ImageData } },    // Imagen 1 (Persona)
+                        { inlineData: { mimeType: "image/png", data: base64GarmentData } } // Imagen 2 (Prenda)
+                    ]
+                }],
+                generationConfig: { responseModalities: ['IMAGE'] },
+                systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            };
+            callApi(payload);
+        }
+
+        // 8. Asignar funciones a los botones
+        
+        // Botones con "data-prompt"
+        [btnSquare, btnVertical, btnWhiteBg, btnSmile].forEach(button => {
+            button.addEventListener('click', () => {
+                const prompt = button.getAttribute('data-prompt');
+                standardTask(prompt);
+            });
+        });
+
+        // Botón de Virtual Try-On
+        btnVirtualTryOn.addEventListener('click', () => {
+            virtualTryOnTask();
+        });
+        
+        // NUEVO: Botón de Reintentar
+        btnRetry.addEventListener('click', () => {
+            if (!lastApiCall.type) return;
+            
+            if (lastApiCall.type === 'standard') {
+                standardTask(lastApiCall.prompt);
+            } else if (lastApiCall.type === 'try-on') {
+                virtualTryOnTask();
+            }
+        });
+
+    </script>
+</body>
+</html>
+
+
