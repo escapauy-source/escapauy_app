@@ -46,8 +46,11 @@ Write-Host "Creando archivo ZIP para Hostinger..." -ForegroundColor Yellow
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $zipName = "escapauy-hostinger-$timestamp.zip"
 
-# Comprimir carpeta dist
-Compress-Archive -Path "dist\*" -DestinationPath $zipName -Force
+# Comprimir contenido de dist manteniendo estructura de carpetas
+# Cambiar al directorio dist temporalmente
+Push-Location dist
+Compress-Archive -Path * -DestinationPath "..\$zipName" -Force
+Pop-Location
 
 Write-Host "Archivo creado: $zipName" -ForegroundColor Green
 
