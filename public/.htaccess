@@ -1,9 +1,16 @@
 RewriteEngine On
 
-# 1) No tocar si es archivo o carpeta existente (incluye /assets/*.js, .css, imagenes, etc.)
+# --- Excepciones explicitas: servir estaticos tal cual ---
+# 1) Cualquier cosa dentro de /assets
+RewriteRule ^assets/ - [L]
+
+# 2) Cualquier cosa dentro de /images
+RewriteRule ^images/ - [L]
+
+# --- Regla general: si es archivo o carpeta real, servirlo ---
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# 2) Fallback de SPA: todo lo demas va a index.html
+# --- Fallback SPA: todo lo demas va a index.html ---
 RewriteRule . /index.html [L]
