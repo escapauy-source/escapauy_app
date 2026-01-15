@@ -5,6 +5,21 @@
 Write-Host "🚀 Iniciando build para producción..." -ForegroundColor Cyan
 Write-Host ""
 
+# 0. Verificar que existan imágenes en public/images
+Write-Host "🔍 Verificando estructura de archivos..." -ForegroundColor Yellow
+if (-not (Test-Path "public/images")) {
+    Write-Host "⚠️  ADVERTENCIA: La carpeta public/images no existe" -ForegroundColor Red
+    Write-Host "   Por favor, crea la carpeta y añade tus imágenes antes de continuar" -ForegroundColor Yellow
+    Write-Host ""
+}
+if (-not (Test-Path "public/.htaccess")) {
+    Write-Host "⚠️  ADVERTENCIA: El archivo public/.htaccess no existe" -ForegroundColor Red
+    Write-Host "   Este archivo es necesario para que las rutas funcionen en Hostinger" -ForegroundColor Yellow
+    Write-Host ""
+}
+Write-Host "✅ Verificación completada" -ForegroundColor Green
+Write-Host ""
+
 # 1. Limpiar build anterior
 Write-Host "🧹 Limpiando build anterior..." -ForegroundColor Yellow
 if (Test-Path "dist") {
