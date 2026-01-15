@@ -1,26 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = "https://bkigsozniabdpbfjenbc.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJraWdzb3puaWFiZHBiZmplbmJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzkyMjAsImV4cCI6MjA4MjE1NTIyMH0.EHSIgLzmPh3bh-v_fv-j5jZ5O7nEbLjT2iwcp0Nbivw";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("Missing Supabase environment variables. Check .env file.");
-    // Prevent crash, but app won't work fully
-}
-
-
-let supabaseInstance;
-
-try {
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith("http")) {
-        throw new Error("Invalid Supabase configuration");
-    }
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
-} catch (error) {
-    console.error("Supabase Client Init Error:", error);
-    // Create a minimal dummy client to prevent crash, but operations will fail
-    supabaseInstance = createClient("https://placeholder.supabase.co", "placeholder") as any;
-}
-
-export const supabase = supabaseInstance;
-
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

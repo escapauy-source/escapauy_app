@@ -1,33 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-
-/**
- * Nota: Dado que el entorno actual no tiene acceso a módulos externos vía npm,
- * se utiliza el cliente de Supabase cargado mediante un script global en el HTML.
- */
-
-// Mock de toast para evitar errores si 'sonner' no está disponible en el entorno
-const toast = {
-  error: (msg) => console.error("Toast Error:", msg),
-  success: (msg) => console.log("Toast Success:", msg)
-};
-
-// Configuración de Supabase
-const supabaseUrl = ""; // Rellenar con tu URL de proyecto
-const supabaseAnonKey = ""; // Rellenar con tu Anon Key
-let supabase = null;
-
-if (typeof window !== 'undefined' && window.supabase) {
-    supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-} else {
-    supabase = {
-        auth: {
-            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-            getSession: async () => ({ data: { session: null } }),
-            signInWithOAuth: async () => ({ error: { message: "Supabase no cargado" } }),
-            signOut: async () => {}
-        }
-    };
-}
+import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
 
 type AuthContextType = {
   user: any | null;
@@ -48,12 +21,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const initAuth = async () => {
+      // Detectar si estamos volviendo de un login de Google
       const inAuthFlow =
         window.location.search.includes('code=') ||
         window.location.hash.includes('access_token=') ||
         window.location.hash.includes('error_description=');
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Escuchar cambios en la sesión
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
@@ -62,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       try {
+        // Obtener sesión inicial
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         if (mounted) {
           setSession(initialSession);
@@ -75,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted) setLoading(false);
       }
 
+      // Tiempo de espera máximo para el flujo de login
       if (inAuthFlow) {
         setTimeout(() => {
           if (mounted) setLoading(false);
@@ -97,14 +74,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`,
+          redirectTo: `${window.location.origin}/`,
           skipBrowserRedirect: false,
           queryParams: { access_type: 'offline', prompt: 'consent' },
         },
       });
       if (error) throw error;
     } catch (err: any) {
-      toast.error(`Error: ${err.message}`);
+      toast.error(`Error de inicio de sesión: ${err.message}`);
     }
   };
 
@@ -157,16 +134,4 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
-
-// El entorno requiere un componente App como exportación por defecto para renderizar
-export default function App() {
-  return (
-    <AuthProvider>
-      <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-        <h1>Auth Provider Loaded</h1>
-        <p>El sistema de autenticación está listo para usarse.</p>
-      </div>
-    </AuthProvider>
-  );
 }
