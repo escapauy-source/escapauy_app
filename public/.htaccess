@@ -1,46 +1,9 @@
-# Configuracion para LiteSpeed en Hostinger
+RewriteEngine On
 
-# Forzar tipos MIME correctos
-AddType application/javascript .js
-AddType application/javascript .mjs
-AddType text/css .css
-AddType image/png .png
-AddType image/jpeg .jpg .jpeg
-AddType image/svg+xml .svg
-AddType image/x-icon .ico
-AddType application/json .json
+# 1) No tocar si es archivo o carpeta existente (incluye /assets/*.js, .css, imagenes, etc.)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
 
-# React Router - Redirigir todas las rutas a index.html
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  
-  # No reescribir archivos existentes
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-l
-  
-  # Redirigir todo a index.html
-  RewriteRule ^.*$ index.html [L,QSA]
-</IfModule>
-
-# Desactivar listado de directorios
-Options -Indexes
-
-# Habilitar FollowSymLinks
-Options +FollowSymLinks
-
-# Compresion
-<IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
-</IfModule>
-
-# Cache control
-<IfModule mod_expires.c>
-  ExpiresActive On
-  ExpiresByType application/javascript "access plus 1 year"
-  ExpiresByType text/css "access plus 1 year"
-  ExpiresByType image/png "access plus 1 year"
-  ExpiresByType image/jpeg "access plus 1 year"
-  ExpiresByType image/svg+xml "access plus 1 year"
-</IfModule>
+# 2) Fallback de SPA: todo lo demas va a index.html
+RewriteRule . /index.html [L]
