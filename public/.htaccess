@@ -1,4 +1,16 @@
-# Configuracion para React Router en Hostinger
+# Configuracion para LiteSpeed en Hostinger
+
+# Forzar tipos MIME correctos
+AddType application/javascript .js
+AddType application/javascript .mjs
+AddType text/css .css
+AddType image/png .png
+AddType image/jpeg .jpg .jpeg
+AddType image/svg+xml .svg
+AddType image/x-icon .ico
+AddType application/json .json
+
+# React Router - Redirigir todas las rutas a index.html
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -6,47 +18,29 @@
   # No reescribir archivos existentes
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
   
   # Redirigir todo a index.html
-  RewriteRule . /index.html [L]
+  RewriteRule ^.*$ index.html [L,QSA]
 </IfModule>
 
-# Configuracion de tipos MIME
-<IfModule mod_mime.c>
-  AddType application/javascript .js
-  AddType application/javascript .mjs
-  AddType text/css .css
-  AddType image/png .png
-  AddType image/jpeg .jpg .jpeg
-  AddType image/svg+xml .svg
-  AddType image/x-icon .ico
-  AddType application/json .json
-  AddType font/woff .woff
-  AddType font/woff2 .woff2
-  AddType font/ttf .ttf
-  AddType font/otf .otf
-</IfModule>
+# Desactivar listado de directorios
+Options -Indexes
 
-# Headers de seguridad y cache
-<IfModule mod_headers.c>
-  # Permitir CORS si es necesario
-  Header set Access-Control-Allow-Origin "*"
-  
-  # Cache para assets estaticos
-  <FilesMatch "\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|otf)$">
-    Header set Cache-Control "max-age=31536000, public"
-  </FilesMatch>
-  
-  # No cachear el HTML
-  <FilesMatch "\.(html|htm)$">
-    Header set Cache-Control "no-cache, no-store, must-revalidate"
-  </FilesMatch>
-</IfModule>
+# Habilitar FollowSymLinks
+Options +FollowSymLinks
 
-# Compresion GZIP
+# Compresion
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
 </IfModule>
 
-# Opciones de directorio
-Options -Indexes +FollowSymLinks
+# Cache control
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
