@@ -85,22 +85,19 @@ export default function Dashboard() {
     }
 
     return (
-        <PageTransition>
-            <SEOHead title={role === 'partner' ? "Ops Center | Partner" : "Comandancia | Turista"} />
-            <div className={role === 'partner' ? "bg-slate-950 min-h-screen text-slate-100 font-serif" : "min-h-screen"}>
-                {role === 'partner' ? (
-                    <div className="pt-24 px-6 md:px-12">
-                        <style dangerouslySetInnerHTML={{
-                            __html: `
-                            :root { --accent-gold: #C5A059; }
-                            .partner-accent { color: var(--accent-gold); }
-                        `}} />
-                        <PartnerDashboard />
-                    </div>
-                ) : (
-                    <TouristDashboard />
-                )}
-            </div>
-        </PageTransition>
+        <div className={role === 'partner' ? "bg-slate-950 min-h-screen text-slate-100 font-serif" : "min-h-screen"}>
+            {role === 'partner' ? (
+                <div className="pt-24 px-6 md:px-12">
+                    <style dangerouslySetInnerHTML={{
+                        __html: `
+                        :root { --accent-gold: #C5A059; }
+                        .partner-accent { color: var(--accent-gold); }
+                    `}} />
+                    <PartnerDashboard />
+                </div>
+            ) : (
+                <TouristDashboard />
+            )}
+        </div>
     );
 }
