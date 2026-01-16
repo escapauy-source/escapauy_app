@@ -1,10 +1,8 @@
 name: Deploy to Hostinger
-
 on:
   push:
     branches:
       - main
-
 jobs:
   web-deploy:
     name: 🎉 Deploy
@@ -33,12 +31,13 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
-          # IMPORTANTE: Revisa en Hostinger File Manager cuál es la ruta exacta
-          # Si tienes un subdominio, suele ser ./public_html/subdominio/
-          # Ajusta la linea de abajo si tu carpeta se llama distinto
-          server-dir: ./
+          server-dir: ./public_html/app_escapauy/
           local-dir: ./dist/
           protocol: ftp
+          exclude: |
+            **/.git*
+            **/.git*/**
+
           exclude: |
             **/.git*
             **/.git*/**
