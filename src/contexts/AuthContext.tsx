@@ -21,19 +21,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     const initAuth = async () => {
-      console.log("🔒 InitAuth Triggered. URL:", window.location.href);
-
       // Detectar si estamos volviendo de un login de Google
       const inAuthFlow =
         window.location.search.includes('code=') ||
         window.location.hash.includes('access_token=') ||
         window.location.hash.includes('error_description=');
 
-      console.log("🕵️ inAuthFlow detection:", inAuthFlow);
-
       // Escuchar cambios en la sesión
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        console.log("🔔 Auth State Change:", event, "Session exists:", !!session);
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
@@ -43,8 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         // Obtener sesión inicial
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
-        console.log("📦 Initial Session:", !!initialSession, "Error:", error);
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
 
         if (mounted) {
           setSession(initialSession);
@@ -52,22 +46,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (!inAuthFlow || initialSession) {
             setLoading(false);
-          } else {
-            console.log("⏳ En flujo de auth, esperando evento de cambio de sesión...");
           }
         }
       } catch (err) {
-        console.error("❌ Error getting session:", err);
         if (mounted) setLoading(false);
       }
 
       // Tiempo de espera máximo para el flujo de login
       if (inAuthFlow) {
         setTimeout(() => {
-          if (mounted) {
-            console.log("⏰ Timeout de auth flow alcanzado");
-            setLoading(false);
-          }
+          if (mounted) setLoading(false);
         }, 5000);
       }
 
