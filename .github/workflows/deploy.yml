@@ -17,10 +17,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: 🏗️ Build Project
         run: npm run build
@@ -34,7 +34,7 @@ jobs:
           # IMPORTANTE: Revisa en Hostinger File Manager cuál es la ruta exacta
           # Si tienes un subdominio, suele ser ./public_html/subdominio/
           # Ajusta la linea de abajo si tu carpeta se llama distinto
-          server-dir: ./public_html/escapauy/ 
+          server-dir: ./public_html/escapauy/
           local-dir: ./dist/
           protocol: ftp
           exclude: |
