@@ -34,7 +34,7 @@ jobs:
           # IMPORTANTE: Revisa en Hostinger File Manager cuál es la ruta exacta
           # Si tienes un subdominio, suele ser ./public_html/subdominio/
           # Ajusta la linea de abajo si tu carpeta se llama distinto
-          server-dir: /app_escapauy/
+          server-dir: app_escapauy/
           local-dir: ./dist/
           protocol: ftp
           exclude: |
