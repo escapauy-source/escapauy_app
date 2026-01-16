@@ -36,7 +36,7 @@ export default function Dashboard() {
                 .from('profiles')
                 .select('role')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
 
             if (profile) {
                 setRole(profile.role);
