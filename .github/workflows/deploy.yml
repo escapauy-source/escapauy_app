@@ -23,7 +23,9 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: 🏗️ Build Project
-        run: npm run build
+        run: |
+          npm run build
+          ls -R dist
 
       - name: 📂 Sync files (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -35,6 +37,7 @@ jobs:
           # Si tienes un subdominio, suele ser ./public_html/subdominio/
           # Ajusta la linea de abajo si tu carpeta se llama distinto
           server-dir: public_html/app_escapauy/
+          state-name: .re-sync-state.json
           local-dir: ./dist/
           protocol: ftp
           exclude: |
