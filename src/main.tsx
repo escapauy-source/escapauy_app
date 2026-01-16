@@ -5,6 +5,10 @@ import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext'
 import { LanguageProvider } from './contexts/LanguageContext'
 
+import { HelmetProvider } from 'react-helmet-async';
+
+// ... other imports
+
 console.log("Vite Environment:", import.meta.env);
 
 try {
@@ -13,12 +17,20 @@ try {
 
   createRoot(rootElement).render(
     <StrictMode>
-      <AuthProvider>
-        <LanguageProvider>
-          <App />
-        </LanguageProvider>
-      </AuthProvider>
+      <HelmetProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <App />
+          </LanguageProvider>
+        </AuthProvider>
+      </HelmetProvider>
     </StrictMode>,
+  );
+  <LanguageProvider>
+    <App />
+  </LanguageProvider>
+      </AuthProvider >
+    </StrictMode >,
   );
 } catch (e) {
   console.error("CRASH DURING RENDER:", e);
