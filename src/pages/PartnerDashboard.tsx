@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import QRScanner from '@/components/QRScanner';
+import PartnerServices from '@/components/PartnerServices';
+import PartnerProfile from '@/components/PartnerProfile';
 
 export default function PartnerDashboard() {
   const { user, signOut } = useAuth();
@@ -10,6 +12,7 @@ export default function PartnerDashboard() {
     { id: 'reservations', label: 'Reservas', icon: '📅' },
     { id: 'scan', label: 'Escanear', icon: '📷' },
     { id: 'services', label: 'Servicios', icon: '✨' },
+    { id: 'profile', label: 'Mi Negocio', icon: '🏢' },
     { id: 'balance', label: 'Balance', icon: '💰' },
   ];
 
@@ -73,9 +76,13 @@ export default function PartnerDashboard() {
 
         {activeTab === 'services' && (
           <div className="animate-fade-in">
-            <div className="bg-slate-900 rounded-2xl p-8 border border-white/5 text-center">
-              <p className="text-slate-400">Gestiona tus servicios y disponibilidad.</p>
-            </div>
+            <PartnerServices />
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+          <div className="animate-fade-in">
+            <PartnerProfile />
           </div>
         )}
 
