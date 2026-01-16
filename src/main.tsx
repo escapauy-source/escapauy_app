@@ -26,12 +26,7 @@ try {
       </HelmetProvider>
     </StrictMode>,
   );
-  <LanguageProvider>
-    <App />
-  </LanguageProvider>
-      </AuthProvider >
-    </StrictMode >,
-  );
+
 } catch (e) {
   console.error("CRASH DURING RENDER:", e);
   document.body.innerHTML = `<h1 style="color:red; padding: 20px;">Error Fatal: ${(e as Error).message}</h1>`;
