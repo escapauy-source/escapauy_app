@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import MyBookings from '@/components/MyBookings';
+import MyBookings from './MyBookings';
 import TouristWizard from '@/components/TouristWizard';
 
 export default function TouristDashboard() {
@@ -42,8 +42,8 @@ export default function TouristDashboard() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex-1 py-4 px-4 text-center border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                   }`}
               >
                 <span className="mr-2">{tab.icon}</span>

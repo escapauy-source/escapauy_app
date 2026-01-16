@@ -58,27 +58,38 @@ const Index = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <p className="mb-4 text-gray-600">¿Cómo quieres ingresar hoy?</p>
+            <div className="space-y-3">
+                <p className="mb-2 text-gray-600 font-medium">Turistas</p>
+                <button 
+                onClick={() => handleLogin('tourist')}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 font-bold shadow-sm"
+                >
+                ✨ Soy Nuevo (Registrarse)
+                </button>
 
-            <button
-              onClick={() => handleLogin('tourist')}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 font-semibold shadow-sm"
-            >
-              🏖️ Soy Turista
-            </button>
-
-            <button
-              onClick={() => handleLogin('partner')}
-              className="w-full bg-slate-800 text-white px-6 py-3 rounded-lg hover:bg-slate-900 transition flex items-center justify-center gap-2 font-semibold shadow-sm"
-            >
-              🤝 Soy Partner
-            </button>
-
-            <div className="pt-4 border-t border-gray-100 mt-6">
-              <p className="text-xs text-gray-400">Al continuar, aceptas nuestros términos y condiciones.</p>
+                <button 
+                onClick={() => handleLogin('tourist')}
+                className="w-full bg-white text-blue-600 border-2 border-blue-100 px-6 py-3 rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-2 font-semibold"
+                >
+                🔑 Ya tengo cuenta
+                </button>
             </div>
-          </div>
+
+            <div className="pt-6 mt-6 border-t border-gray-100 space-y-3">
+                <p className="mb-2 text-gray-600 font-medium">Partners</p>
+                <button 
+                onClick={() => handleLogin('partner')}
+                className="w-full bg-slate-800 text-white px-6 py-3 rounded-lg hover:bg-slate-900 transition flex items-center justify-center gap-2 font-semibold shadow-sm"
+                >
+                🤝 Acceso Socios
+                </button>
+            </div>
+            
+            <div className="pt-4 mt-2">
+                <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                    * Al ingresar con Google, tu cuenta se crea automáticamente si no existe. Simple y seguro.
+                </p>
+            </div>
         )}
       </div>
     </div>
