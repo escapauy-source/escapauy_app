@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: "https://escapauy.licorescolinadeloscanes.com/auth/v1/callback",
           skipBrowserRedirect: false,
           queryParams: { access_type: 'offline', prompt: 'consent' },
         },
