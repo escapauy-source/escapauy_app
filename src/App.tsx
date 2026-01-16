@@ -13,6 +13,7 @@ const App = () => (
         <Toaster position="top-center" richColors />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth/v1/callback" element={<Index />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
