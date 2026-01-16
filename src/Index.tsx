@@ -11,8 +11,11 @@ const Index = () => {
 
   useEffect(() => {
     if (user && isCallback) {
-      // Si ya tenemos usuario y estamos en la ruta de callback, limpiar URL
-      navigate("/", { replace: true });
+      // Si ya tenemos usuario y estamos en la ruta de callback, ir al Dashboard
+      navigate("/dashboard", { replace: true });
+    } else if (user && location.pathname === "/") {
+      // Validación extra: si entra directo al home y ya tiene sesión, ir al dash
+      navigate("/dashboard", { replace: true });
     }
   }, [user, isCallback, navigate]);
 
