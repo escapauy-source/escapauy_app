@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import QrScanner from 'react-qr-scanner';
+import { useEffect, useState } from 'react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 interface QRCodeScannerProps {
     onScan: (data: string | null) => void;
@@ -7,50 +7,43 @@ interface QRCodeScannerProps {
 }
 
 export default function QRCodeScanner({ onScan, onError }: QRCodeScannerProps) {
-    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
+    useEffect(() => {
+        const scannerId = "html5qr-code-full-region";
 
-    const handleScan = (data: any) => {
-        if (data) {
-            onScan(data?.text || data);
-        }
-    };
+        // Configuración básica
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+        };
 
-    const handleError = (err: any) => {
-        console.error(err);
-        onError(err);
-    };
+        const scanner = new Html5QrcodeScanner(scannerId, config, false);
 
-    const previewStyle = {
-        height: 320,
-        width: '100%',
-        borderRadius: '16px',
-        objectFit: 'cover'
-    };
+        scanner.render(
+            (decodedText) => {
+                onScan(decodedText);
+                // Opcional: Pausar o limpiar después del éxito si se desea
+            },
+            (errorMessage) => {
+                // Errores de escaneo continuo son normales, solo reportar si es crítico
+                // onError(errorMessage); 
+            }
+        );
+
+        // Cleanup function
+        return () => {
+            scanner.clear().catch(error => {
+                console.error("Failed to clear html5QrcodeScanner. ", error);
+            });
+        };
+    }, []); // Empty dependency array ensures run once on mount
 
     return (
-        <div className="flex flex-col items-center space-y-4">
-            <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl">
-                <QrScanner
-                    delay={300}
-                    onError={handleError}
-                    onScan={handleScan}
-                    style={previewStyle}
-                    constraints={{
-                        video: { facingMode }
-                    }}
-                />
-                <div className="absolute inset-0 border-2 border-white/30 rounded-2xl pointer-events-none">
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-emerald-400 rounded-lg shadow-[0_0_15px_rgba(52,211,153,0.5)]"></div>
-                </div>
-            </div>
-
-            <button
-                onClick={() => setFacingMode(prev => prev === 'environment' ? 'user' : 'environment')}
-                className="text-slate-400 text-sm hover:text-white transition flex items-center gap-2"
-            >
-                🔄 Cambiar Cámara
-            </button>
-
+        <div className="flex flex-col items-center space-y-4 w-full max-w-sm mx-auto">
+            <div
+                id="html5qr-code-full-region"
+                className="w-full bg-slate-900 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl"
+            />
             <p className="text-slate-500 text-xs text-center">
                 Apunta la cámara al código QR del turista
             </p>
