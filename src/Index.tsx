@@ -1,99 +1,95 @@
-import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 
 const Index = () => {
   const { user, signInWithGoogle, signOut, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const isCallback = location.pathname.includes('auth/v1/callback');
-
-  useEffect(() => {
-    if (user && isCallback) {
-      // Si ya tenemos usuario y estamos en la ruta de callback, ir al Dashboard
-      navigate("/dashboard", { replace: true });
-    } else if (user && location.pathname === "/") {
-      // Validación extra: si entra directo al home y ya tiene sesión, ir al dash
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user, isCallback, navigate]);
 
   const handleLogin = (role: 'tourist' | 'partner') => {
     localStorage.setItem('pending_role', role);
     signInWithGoogle();
   };
 
-  if (loading || (isCallback && !user)) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-        <p className="text-gray-600">Procesando inicio de sesión...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
+        <p className="text-slate-500 font-medium">Cargando...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
-        <h1 className="text-3xl font-bold mb-2 text-blue-600">EscapaUY</h1>
-        <p className="text-gray-500 mb-8">Tu aventura comienza aquí</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gold-boutique/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+      </div>
+
+      <div className="bg-white/80 backdrop-blur-xl p-8 md:p-12 rounded-3xl shadow-2xl shadow-slate-200/50 max-w-md w-full text-center relative z-10 border border-white/50">
+        <div className="mb-8">
+          <h1 className="text-5xl font-black mb-2 text-primary tracking-tighter">EscapaUY</h1>
+          <p className="text-slate-400 font-medium uppercase tracking-widest text-xs">Tu aventura comienza aquí</p>
+        </div>
 
         {user ? (
-          <div>
-            <p className="mb-4">Bienvenido, <strong>{user.email}</strong></p>
-            <div className="flex gap-2 justify-center">
+          <div className="animate-fade-in-up">
+            <div className="bg-slate-50 p-6 rounded-2xl mb-6 border border-slate-100">
+              <p className="text-sm text-slate-500 mb-1">Bienvenido de nuevo</p>
+              <p className="font-bold text-slate-800">{user.email}</p>
+            </div>
+
+            <div className="space-y-3">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                className="w-full bg-primary text-white font-black py-4 rounded-xl hover:bg-sky-600 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
               >
-                Ir al Dashboard
+                🚀 Ir al Dashboard
               </button>
               <button
                 onClick={signOut}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+                className="w-full bg-slate-100 text-slate-500 font-bold py-4 rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
               >
                 Cerrar Sesión
               </button>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6 animate-fade-in-up">
             <div className="space-y-3">
-              <p className="mb-2 text-gray-600 font-medium">Turistas</p>
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Turistas</p>
               <button
                 onClick={() => handleLogin('tourist')}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 font-bold shadow-sm"
+                className="w-full bg-gradient-to-r from-primary to-sky-500 text-white py-4 rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/25 font-black uppercase tracking-wide text-sm flex items-center justify-center gap-2"
               >
                 ✨ Soy Nuevo (Registrarse)
               </button>
 
               <button
                 onClick={() => handleLogin('tourist')}
-                className="w-full bg-white text-blue-600 border-2 border-blue-100 px-6 py-3 rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-2 font-semibold"
+                className="w-full bg-white text-primary border-2 border-primary/10 py-4 rounded-xl hover:border-primary/30 hover:bg-primary/5 transition-all font-bold uppercase tracking-wide text-sm flex items-center justify-center gap-2"
               >
                 🔑 Ya tengo cuenta
               </button>
             </div>
 
-            <div className="pt-6 mt-6 border-t border-gray-100 space-y-3">
-              <p className="mb-2 text-gray-600 font-medium">Partners</p>
+            <div className="pt-6 border-t border-slate-100">
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Partners</p>
               <button
                 onClick={() => handleLogin('partner')}
-                className="w-full bg-slate-800 text-white px-6 py-3 rounded-lg hover:bg-slate-900 transition flex items-center justify-center gap-2 font-semibold shadow-sm"
+                className="w-full bg-slate-800 text-white py-4 rounded-xl hover:bg-slate-900 transition-all shadow-lg shadow-slate-900/20 font-black uppercase tracking-wide text-sm flex items-center justify-center gap-2"
               >
                 🤝 Acceso Socios
               </button>
             </div>
-
-            <div className="pt-4 mt-2">
-              <p className="text-xs text-gray-400 max-w-xs mx-auto">
-                * Al ingresar con Google, tu cuenta se crea automáticamente si no existe. Simple y seguro.
-              </p>
-            </div>
           </div>
         )}
       </div>
+
+      <p className="text-xs text-slate-400 mt-8 relative z-10 text-center max-w-xs mx-auto leading-relaxed opacity-60">
+        Al ingresar, aceptas nuestros términos de servicio y política de privacidad.
+      </p>
     </div>
   );
 };
