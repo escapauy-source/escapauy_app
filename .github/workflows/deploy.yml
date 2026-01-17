@@ -1,10 +1,9 @@
-            - name: 📂 Sync files (FTP)
+      - name: 📂 Sync files (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
-          # ESTA ES LA RUTA CLAVE:
           server-dir: /app_escapauy/
           local-dir: ./dist/
           protocol: ftp
