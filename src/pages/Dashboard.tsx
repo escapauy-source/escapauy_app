@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from "react";
-import { supabase } from "../integration/supabase/client"; // ¡Corregido a "integration" en singular!
+// Rutas relativas puras (sin @)
+import { supabase } from "../integrations/supabase/client"; 
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { MapPin, Clock } from "lucide-react";
