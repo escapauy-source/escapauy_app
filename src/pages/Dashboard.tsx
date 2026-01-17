@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
-import { supabase } from "/src/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { supabase } from "../integrations/supabase/client.ts"; // ¡Ruta corregida con .ts!
+import { Card } from "../components/ui/card"; // Ruta relativa
+import { Button } from "../components/ui/button"; // Ruta relativa
 import { MapPin, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -63,7 +63,7 @@ const Dashboard = () => {
               <Card key={trip.id} className="bg-slate-900 border-[#C5A059]/20 hover:border-[#C5A059]/50 transition-all duration-300 overflow-hidden group cursor-pointer" onClick={() => navigate(`/trip/${trip.id}`)}>
                 <div className="relative h-48 overflow-hidden">
                   <img src={trip.image_url || "/placeholder.svg"} alt={trip.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#C5A059]/30">
+                  <div className="absolute top-4 right-4 bg-slate-950/80/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#C5A059]/30">
                     <span className="text-[#C5A059] font-bold">${trip.price}</span>
                   </div>
                 </div>
