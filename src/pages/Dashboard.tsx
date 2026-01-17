@@ -1,11 +1,10 @@
 ﻿import { useEffect, useState } from "react";
-// Rutas relativas puras (sin @)
-import { supabase } from "../integrations/supabase/client"; 
-import { Card } from "../components/ui/card";
-import { Button } from "../components/ui/button";
+// RUTA REAL: sale de pages, entra en lib
+import { supabase } from "../lib/supabase"; 
+// RUTAS REALES: los componentes están directamente en components
+import { Button } from "../components/Button";
 import { MapPin, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 const Dashboard = () => {
   const [trips, setTrips] = useState([]);
@@ -24,7 +23,6 @@ const Dashboard = () => {
         setTrips(data || []);
       } catch (error) {
         console.error("Error:", error);
-        toast.error("No se pudieron cargar los viajes");
       } finally {
         setLoading(false);
       }
@@ -48,7 +46,7 @@ const Dashboard = () => {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-[#C5A059] to-yellow-200 bg-clip-text text-transparent">
             EscapaUY
           </h1>
-          <Button variant="ghost" className="text-[#C5A059] hover:text-white hover:bg-[#C5A059]/20" onClick={() => navigate("/my-bookings")}>
+          <Button className="text-[#C5A059] border-[#C5A059] hover:bg-[#C5A059]/20" onClick={() => navigate("/my-bookings")}>
             Mis Reservas
           </Button>
         </div>
@@ -61,7 +59,7 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {trips.map((trip) => (
-              <Card key={trip.id} className="bg-slate-900 border-[#C5A059]/20 hover:border-[#C5A059]/50 transition-all duration-300 overflow-hidden group cursor-pointer" onClick={() => navigate(`/trip/${trip.id}`)}>
+              <div key={trip.id} className="bg-slate-900 border border-[#C5A059]/20 hover:border-[#C5A059]/50 transition-all duration-300 rounded-xl overflow-hidden group cursor-pointer" onClick={() => navigate(`/trip/${trip.id}`)}>
                 <div className="relative h-48 overflow-hidden">
                   <img src={trip.image_url || "/placeholder.svg"} alt={trip.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   <div className="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#C5A059]/30">
@@ -85,7 +83,7 @@ const Dashboard = () => {
                     Ver Detalles
                   </Button>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         </section>
