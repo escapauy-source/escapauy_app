@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { supabase } from "../integrations/supabase/client";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
 import { Calendar, MapPin, Star, Clock, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -42,7 +42,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-20">
-      {/* Header con borde dorado */}
       <header className="border-b border-gold-boutique/30 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-gold-boutique to-yellow-200 bg-clip-text text-transparent">
