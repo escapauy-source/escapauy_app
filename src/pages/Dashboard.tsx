@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
-import { supabase } from "../integrations/supabase/client";
-import { Card } from "../components/ui/card";
-import { Button } from "../components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Star, Clock, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -35,19 +35,19 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold-boutique"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#C5A059]"></div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white pb-20">
-      <header className="border-b border-gold-boutique/30 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-[#C5A059]/30 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-gold-boutique to-yellow-200 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#C5A059] to-yellow-200 bg-clip-text text-transparent">
             EscapaUY
           </h1>
-          <Button variant="ghost" className="text-gold-boutique hover:text-white hover:bg-gold-boutique/20" onClick={() => navigate("/my-bookings")}>
+          <Button variant="ghost" className="text-[#C5A059] hover:text-white hover:bg-[#C5A059]/20" onClick={() => navigate("/my-bookings")}>
             Mis Reservas
           </Button>
         </div>
@@ -60,27 +60,27 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {trips.map((trip) => (
-              <Card key={trip.id} className="bg-slate-900 border-gold-boutique/20 hover:border-gold-boutique/50 transition-all duration-300 overflow-hidden group cursor-pointer" onClick={() => navigate(`/trip/${trip.id}`)}>
+              <Card key={trip.id} className="bg-slate-900 border-[#C5A059]/20 hover:border-[#C5A059]/50 transition-all duration-300 overflow-hidden group cursor-pointer" onClick={() => navigate(`/trip/${trip.id}`)}>
                 <div className="relative h-48 overflow-hidden">
                   <img src={trip.image_url || "/placeholder.svg"} alt={trip.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full border border-gold-boutique/30">
-                    <span className="text-gold-boutique font-bold">${trip.price}</span>
+                  <div className="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#C5A059]/30">
+                    <span className="text-[#C5A059] font-bold">${trip.price}</span>
                   </div>
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-gold-boutique transition-colors">{trip.title}</h3>
+                  <h3 className="text-xl font-bold mb-2 group-hover:text-[#C5A059] transition-colors">{trip.title}</h3>
                   <div className="flex items-center text-slate-400 text-sm mb-4 gap-4">
                     <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4 text-gold-boutique" />
+                      <MapPin className="w-4 h-4 text-[#C5A059]" />
                       {trip.location}
                     </div>
                     <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4 text-gold-boutique" />
+                      <Clock className="w-4 h-4 text-[#C5A059]" />
                       {trip.duration}
                     </div>
                   </div>
                   <p className="text-slate-400 text-sm line-clamp-2 mb-6">{trip.description}</p>
-                  <Button className="w-full bg-gold-boutique hover:bg-gold-boutique/80 text-slate-950 font-bold">
+                  <Button className="w-full bg-[#C5A059] hover:bg-[#C5A059]/80 text-slate-950 font-bold">
                     Ver Detalles
                   </Button>
                 </div>
