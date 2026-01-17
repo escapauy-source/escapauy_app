@@ -1,8 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-// RUTA REAL: sale de pages, entra en lib
 import { supabase } from "../lib/supabase"; 
-// RUTAS REALES: los componentes están directamente en components
-import { Button } from "../components/Button";
 import { MapPin, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -46,9 +43,12 @@ const Dashboard = () => {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-[#C5A059] to-yellow-200 bg-clip-text text-transparent">
             EscapaUY
           </h1>
-          <Button className="text-[#C5A059] border-[#C5A059] hover:bg-[#C5A059]/20" onClick={() => navigate("/my-bookings")}>
+          <button 
+            className="px-4 py-2 rounded-lg border border-[#C5A059] text-[#C5A059] hover:bg-[#C5A059]/20 transition-colors"
+            onClick={() => navigate("/my-bookings")}
+          >
             Mis Reservas
-          </Button>
+          </button>
         </div>
       </header>
 
@@ -59,7 +59,11 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {trips.map((trip) => (
-              <div key={trip.id} className="bg-slate-900 border border-[#C5A059]/20 hover:border-[#C5A059]/50 transition-all duration-300 rounded-xl overflow-hidden group cursor-pointer" onClick={() => navigate(`/trip/${trip.id}`)}>
+              <div 
+                key={trip.id} 
+                className="bg-slate-900 border border-[#C5A059]/20 hover:border-[#C5A059]/50 transition-all duration-300 rounded-xl overflow-hidden group cursor-pointer"
+                onClick={() => navigate(`/trip/${trip.id}`)}
+              >
                 <div className="relative h-48 overflow-hidden">
                   <img src={trip.image_url || "/placeholder.svg"} alt={trip.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   <div className="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full border border-[#C5A059]/30">
@@ -79,9 +83,9 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <p className="text-slate-400 text-sm line-clamp-2 mb-6">{trip.description}</p>
-                  <Button className="w-full bg-[#C5A059] hover:bg-[#C5A059]/80 text-slate-950 font-bold">
+                  <button className="w-full py-3 rounded-lg bg-[#C5A059] hover:bg-[#C5A059]/80 text-slate-950 font-bold transition-colors">
                     Ver Detalles
-                  </Button>
+                  </button>
                 </div>
               </div>
             ))}
