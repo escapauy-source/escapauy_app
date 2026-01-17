@@ -1,106 +1,97 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
-import { Navigate } from "react-router-dom";
-import TouristDashboard from "./TouristDashboard";
-import PartnerDashboard from "./PartnerDashboard";
-import PageTransition from "@/components/PageTransition";
-import SEOHead from "@/components/SEOHead";
+﻿import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar, MapPin, Star, Clock, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
-export default function Dashboard() {
-    const { user } = useAuth();
-    const [role, setRole] = useState<string | null>(null);
-    const [onboardingComplete, setOnboardingComplete] = useState<boolean>(true);
-    const [loading, setLoading] = useState(true);
+const Dashboard = () => {
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        async function fetchRole() {
-            if (!user) return;
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("trips")
+          .select("*")
+          .eq("status", "active");
 
-            // 1. Prioridad: Revisar si venimos de /partner-login o hay un rol pendiente en localStorage
-            const pendingRole = localStorage.getItem('pending_role');
-            const userMetadataRole = user.user_metadata?.role;
-            const currentPath = window.location.hash || window.location.pathname;
-            const isPartnerPath = currentPath.toLowerCase().includes('partner');
+        if (error) throw error;
+        setTrips(data || []);
+      } catch (error) {
+        console.error("Error:", error);
+        toast.error("No se pudieron cargar los viajes");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-            console.log("Dashboard Role Detection:", { currentPath, isPartnerPath, pendingRole, userMetadataRole });
+    fetchTrips();
+  }, []);
 
-            // Fallback inmediato antes de la DB para evitar saltos de interfaz
-            const detectedRole = isPartnerPath ? 'partner' : (pendingRole || userMetadataRole || null);
-            if (detectedRole) {
-                setRole(detectedRole);
-            }
-
-            // 2. Fetch profile from DB for source of truth
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .maybeSingle();
-
-            if (profile) {
-                setRole(profile.role);
-
-                // Sincronizar metadata si es necesario
-                if (profile.role !== userMetadataRole) {
-                    await supabase.auth.updateUser({
-                        data: { role: profile.role }
-                    });
-                }
-
-                if (profile.role === 'tourist') {
-                    const { data: psycho } = await supabase
-                        .from('psychometric_profiles')
-                        .select('has_completed_onboarding')
-                        .eq('user_id', user.id)
-                        .single();
-
-                    if (!psycho || !psycho.has_completed_onboarding) {
-                        setOnboardingComplete(false);
-                    }
-                }
-            } else if (detectedRole) {
-                // Si no hay perfil pero detectamos rol (ej. nuevo registro), intentar crearlo o usar el detectado
-                console.log("No profile found, using detected role:", detectedRole);
-                setRole(detectedRole);
-            }
-
-            setLoading(false);
-        }
-
-        fetchRole();
-    }, [user]);
-
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
-                <div className="animate-spin w-12 h-12 border-4 border-gold-boutique border-t-transparent rounded-full shadow-[0_0_15px_rgba(197,160,89,0.5)]"></div>
-                <p className="text-gold-boutique font-mono text-xs uppercase tracking-[0.3em] animate-pulse">Iniciando Terminal Agéntica...</p>
-            </div>
-        );
-    }
-
-    if (role === 'tourist' && !onboardingComplete) {
-        return <Navigate to="/onboarding" replace />;
-    }
-
+  if (loading) {
     return (
-        <PageTransition>
-            <SEOHead title={role === 'partner' ? "Ops Center | Partner" : "Comandancia | Turista"} />
-            <div className={role === 'partner' ? "bg-slate-950 min-h-screen text-slate-100 font-serif" : "min-h-screen"}>
-                {role === 'partner' ? (
-                    <div className="pt-24 px-6 md:px-12">
-                        <style dangerouslySetInnerHTML={{
-                            __html: `
-                            :root { --accent-gold: #C5A059; }
-                            .partner-accent { color: var(--accent-gold); }
-                        `}} />
-                        <PartnerDashboard />
-                    </div>
-                ) : (
-                    <TouristDashboard />
-                )}
-            </div>
-        </PageTransition>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold-boutique"></div>
+      </div>
     );
-}
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-white pb-20">
+      {/* Header con borde dorado */}
+      <header className="border-b border-gold-boutique/30 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-gold-boutique to-yellow-200 bg-clip-text text-transparent">
+            EscapaUY
+          </h1>
+          <Button variant="ghost" className="text-gold-boutique hover:text-white hover:bg-gold-boutique/20" onClick={() => navigate("/my-bookings")}>
+            Mis Reservas
+          </Button>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <section className="mb-12">
+          <h2 className="text-3xl font-bold mb-2">Descubre tu próxima aventura</h2>
+          <p className="text-slate-400 mb-8">Experiencias exclusivas seleccionadas para ti</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {trips.map((trip) => (
+              <Card key={trip.id} className="bg-slate-900 border-gold-boutique/20 hover:border-gold-boutique/50 transition-all duration-300 overflow-hidden group cursor-pointer" onClick={() => navigate(`/trip/${trip.id}`)}>
+                <div className="relative h-48 overflow-hidden">
+                  <img src={trip.image_url || "/placeholder.svg"} alt={trip.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div className="absolute top-4 right-4 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full border border-gold-boutique/30">
+                    <span className="text-gold-boutique font-bold">${trip.price}</span>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-2 group-hover:text-gold-boutique transition-colors">{trip.title}</h3>
+                  <div className="flex items-center text-slate-400 text-sm mb-4 gap-4">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4 text-gold-boutique" />
+                      {trip.location}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4 text-gold-boutique" />
+                      {trip.duration}
+                    </div>
+                  </div>
+                  <p className="text-slate-400 text-sm line-clamp-2 mb-6">{trip.description}</p>
+                  <Button className="w-full bg-gold-boutique hover:bg-gold-boutique/80 text-slate-950 font-bold">
+                    Ver Detalles
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
