@@ -1,534 +1,563 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { ArrowRight, CheckCircle2, Globe, User, Users, Baby, Sparkles, ShieldCheck, Zap, Calendar, MapPin, BrainCircuit, Heart, Compass, Clock, Lock } from "lucide-react";
-import { toast } from "sonner";
-import SEOHead from "@/components/SEOHead";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ArrowLeft, 
+  Sparkles, 
+  Check, 
+  Users, 
+  User, 
+  Heart, 
+  UsersRound,
+  Briefcase,
+  MapPin,
+  Calendar,
+  Mountain,
+  Palmtree,
+  Building2,
+  Waves
+} from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
-// --- CONSTANTS & HELPERS ---
+interface FormData {
+  fullName: string;
+  fiscalResidence: string;
+  travelCircle: 'solo' | 'pareja' | 'familia' | 'amigos' | '';
+  destination: string;
+  days: number;
+  answers: Record<string, string>;
+}
 
-const NATIONALITIES = [
-    { code: "UY", name: "Uruguay", flag: "🇺🇾" },
-    { code: "AR", name: "Argentina", flag: "🇦🇷" },
-    { code: "BR", name: "Brasil", flag: "🇧🇷" },
-    { code: "OTHER", name: "Internacional", flag: "🌎" }
+const DESTINATIONS = [
+  { id: 'auto', name: 'DISEÑA MI RUTA SEGÚN MI ADN', subtitle: 'Algoritmo Genéticamente Personalizado', icon: Sparkles, special: true },
+  { id: 'colonia', name: 'COLONIA DEL SACRAMENTO', icon: Building2 },
+  { id: 'carmelo', name: 'CARMELO', icon: Palmtree },
+  { id: 'helvecia', name: 'NUEVA HELVECIA', icon: Mountain },
+  { id: 'conchillas', name: 'CONCHILLAS', icon: Waves },
+  { id: 'valdense', name: 'COLONIA VALDENSE', icon: Mountain },
+  { id: 'tarariras', name: 'TARARIRAS', icon: Waves },
+  { id: 'lacaze', name: 'JUAN LACAZE', icon: Building2 },
+  { id: 'rosario', name: 'ROSARIO', icon: Palmtree },
+  { id: 'santaana', name: 'SANTA ANA', icon: Waves },
+  { id: 'artilleros', name: 'ARTILLEROS', icon: Mountain },
+  { id: 'costa', name: 'COSTA DEL INMIGRANTE', icon: Waves },
 ];
 
-const COLONIA_DESTINATIONS = [
-    "Colonia del Sacramento", "Carmelo", "Nueva Helvecia", "Conchillas",
-    "Colonia Valdense", "Tarariras", "Juan Lacaze", "Rosario",
-    "Santa Ana", "Artilleros", "Costa del Inmigrante"
-];
-
-// Icon helpers for Stability manually
-const Umbrella = ({ size }: { size: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7" /></svg>;
-const UmbrellaOff = ({ size }: { size: number }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 12v-7" /><path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7" /></svg>;
-
-// PSYCHOMETRIC DNA TEST (5 DIMENSIONS)
-const DNA_QUESTIONS = [
-    {
-        trait: "extraversion",
-        label: "Energía Social",
-        icon: <Zap size={24} />,
-        question: "¿Cuál es tu ambiente ideal?",
-        options: [
-            { label: "Parador Social", sub: "Música & Gente", value: 1, icon: <Users size={32} /> },
-            { label: "Rincón Zen", sub: "Silencio & Río", value: 0, icon: <User size={32} /> }
-        ]
-    },
-    {
-        trait: "conscientiousness",
-        label: "Estructura",
-        icon: <Clock size={24} />,
-        question: "¿Cómo manejas el tiempo?",
-        options: [
-            { label: "Agenda Milimétrica", sub: "Control Total", value: 1, icon: <Calendar size={32} /> },
-            { label: "Sorpresa Espontánea", sub: "Flirteo con el Caos", value: 0, icon: <Compass size={32} /> }
-        ]
-    },
-    {
-        trait: "openness",
-        label: "Apertura",
-        icon: <Globe size={24} />,
-        question: "¿Qué buscas descubrir?",
-        options: [
-            { label: "Tesoros Ocultos", sub: "Aventura Real", value: 1, icon: <MapPin size={32} /> },
-            { label: "Clásicos Probados", sub: "Tradición Segura", value: 0, icon: <ShieldCheck size={32} /> }
-        ]
-    },
-    {
-        trait: "agreeableness",
-        label: "Interacción",
-        icon: <Heart size={24} />,
-        question: "¿Tu estilo de servicio?",
-        options: [
-            { label: "Comunidad", sub: "Experiencia Compartida", value: 1, icon: <Users size={32} /> },
-            { label: "Boutique", sub: "Privado & Exclusivo", value: 0, icon: <Sparkles size={32} /> }
-        ]
-    },
-    {
-        trait: "stability",
-        label: "Resiliencia",
-        icon: <Lock size={24} />,
-        question: "¿Y si llueve?",
-        options: [
-            { label: "Adaptación Total", sub: "Bailar bajo la lluvia", value: 1, icon: <UmbrellaOff size={32} /> },
-            { label: "Garantía Plan B", sub: "Seguridad ante todo", value: 0, icon: <Umbrella size={32} /> }
-        ]
-    }
+const QUESTIONS = [
+  {
+    id: 'energy',
+    dimension: 'ENERGÍA SOCIAL',
+    question: '¿CUÁL ES TU AMBIENTE IDEAL?',
+    options: [
+      { value: 'social', label: 'PARADOR SOCIAL', sublabel: 'MÚSICA & GENTE' },
+      { value: 'zen', label: 'RINCÓN ZEN', sublabel: 'SILENCIO & RÍO' }
+    ]
+  },
+  {
+    id: 'planning',
+    dimension: 'PLANIFICACIÓN',
+    question: '¿CÓMO MANEJAS EL TIEMPO?',
+    options: [
+      { value: 'structured', label: 'AGENDA MILIMÉTRICA', sublabel: 'CONTROL TOTAL' },
+      { value: 'spontaneous', label: 'SORPRESA ESPONTÁNEA', sublabel: 'FLIRTEO CON EL CAOS' }
+    ]
+  },
+  {
+    id: 'exploration',
+    dimension: 'APERTURA',
+    question: '¿QUÉ BUSCAS DESCUBRIR?',
+    options: [
+      { value: 'explorer', label: 'TESOROS OCULTOS', sublabel: 'AVENTURA REAL' },
+      { value: 'classic', label: 'CLÁSICOS PROBADOS', sublabel: 'TRADICIÓN SEGURA' }
+    ]
+  },
+  {
+    id: 'service',
+    dimension: 'PREFERENCIA',
+    question: '¿TU ESTILO DE SERVICIO?',
+    options: [
+      { value: 'community', label: 'COMUNIDAD', sublabel: 'EXPERIENCIA COMPARTIDA' },
+      { value: 'boutique', label: 'BOUTIQUE', sublabel: 'PRIVADO & EXCLUSIVO' }
+    ]
+  },
+  {
+    id: 'resilience',
+    dimension: 'RESILIENCIA',
+    question: '¿Y SI LLUEVE?',
+    options: [
+      { value: 'adaptable', label: 'ADAPTACIÓN TOTAL', sublabel: 'BAILAR BAJO LA LLUVIA' },
+      { value: 'planb', label: 'GARANTÍA PLAN B', sublabel: 'SEGURIDAD ANTE TODO' }
+    ]
+  }
 ];
 
 export default function TouristWizard() {
-    const { user } = useAuth();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [step, setStep] = useState(1);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState<FormData>({
+    fullName: '',
+    fiscalResidence: '',
+    travelCircle: '',
+    destination: '',
+    days: 2,
+    answers: {}
+  });
 
-    const [step, setStep] = useState(0);
-    const [loading, setLoading] = useState(false);
+  const handleNext = () => {
+    if (step === 1 && (!formData.fullName || !formData.fiscalResidence)) {
+      toast.error('Por favor completa todos los campos');
+      return;
+    }
+    if (step === 2 && !formData.travelCircle) {
+      toast.error('Por favor selecciona una opción');
+      return;
+    }
+    
+    if (step === 2) {
+      setStep(3); // Ir a preguntas
+    } else if (step < 4) {
+      setStep(step + 1);
+    }
+  };
 
-    const [formData, setFormData] = useState({
-        full_name: "",
-        nationality: "",
-        companion: "",
-        duration: 2,
-        destination: ""
-    });
+  const handleQuestionAnswer = (questionId: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      answers: { ...prev.answers, [questionId]: value }
+    }));
+    
+    // Auto-avanzar a la siguiente pregunta
+    setTimeout(() => {
+      if (currentQuestion < QUESTIONS.length - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+      } else {
+        setStep(4); // Ir a selección final
+      }
+    }, 300);
+  };
 
-    const [scores, setScores] = useState<Record<string, number>>({});
+  const generateItinerary = async (answers: Record<string, string>) => {
+    // Generar itinerario basado en respuestas
+    const destination = formData.destination === 'auto' 
+      ? DESTINATIONS[Math.floor(Math.random() * (DESTINATIONS.length - 1)) + 1].name
+      : DESTINATIONS.find(d => d.id === formData.destination)?.name || 'Uruguay';
 
-    // Clean slate on mount
-    useEffect(() => {
-        localStorage.removeItem('wizard_completed');
-    }, []);
-
-    const handleIdentitySubmit = () => {
-        if (!formData.full_name || !formData.nationality) {
-            toast.error("Datos requeridos para beneficios fiscales.");
-            return;
-        }
-        setStep(1);
+    return {
+      destination,
+      days: formData.days,
+      dates: `${formData.days} días`,
+      personality: Object.values(answers).join(', '),
+      recommendations: [
+        { day: 1, activities: ['Llegada y check-in', 'Exploración local', 'Cena típica'] },
+        { day: 2, activities: ['Tour guiado', 'Tiempo libre', 'Experiencia cultural'] }
+      ],
+      created_at: new Date().toISOString()
     };
+  };
 
-    const handleGroupSelect = (type: string) => {
-        setFormData(prev => ({ ...prev, companion: type }));
-    };
+  const handleComplete = async () => {
+    if (!formData.destination) {
+      toast.error('Por favor selecciona un destino');
+      return;
+    }
 
-    const handleGroupSubmit = () => {
-        if (!formData.companion) {
-            toast.error("Selecciona tu compañía de viaje.");
-            return;
-        }
-        setStep(2);
-    };
+    if (!user) {
+      toast.error('Debes iniciar sesión');
+      navigate('/');
+      return;
+    }
 
-    const handleDnaAnswer = (trait: string, value: number) => {
-        setScores(prev => ({ ...prev, [trait]: value }));
+    try {
+      setLoading(true);
+      toast.success('¡Perfil ADN guardado exitosamente!');
 
-        if (step < 6) {
-            setStep(prev => prev + 1);
-        } else {
-            setStep(7);
-        }
-    };
+      // 1. Guardar perfil psicométrico
+      const { data: profileData, error: profileError } = await supabase
+        .from('psychometric_profiles')
+        .upsert({
+          user_id: user.id,
+          responses: formData.answers,
+          travel_circle: formData.travelCircle,
+          full_name: formData.fullName,
+          fiscal_residence: formData.fiscalResidence,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        })
+        .select()
+        .single();
 
-    const handleBack = () => {
-        if (step > 0) {
-            setStep(step - 1);
-        } else {
-            window.history.back();
-        }
-    };
+      if (profileError) {
+        console.error('Error saving profile:', profileError);
+        throw profileError;
+      }
 
-    // 🔥 FUNCIÓN MEJORADA SEGÚN SUGERENCIA
-    const handleCompleteWizard = async () => {
-        if (!formData.destination) {
-            toast.error("Selecciona un destino o la opción IA.");
-            return;
-        }
+      // 2. Generar itinerario
+      const itinerary = await generateItinerary(formData.answers);
 
-        setLoading(true);
-        setStep(8); // Mostrar pantalla de loading
+      // 3. Guardar el viaje
+      const { data: tripData, error: tripError } = await supabase
+        .from('trips')
+        .insert({
+          user_id: user.id,
+          profile_id: profileData.id,
+          destination: itinerary.destination,
+          dates: itinerary.dates,
+          days: formData.days,
+          itinerary: itinerary,
+          status: 'generated',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-        try {
-            // 1. VERIFICAR SESIÓN ACTIVA
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (tripError) {
+        console.error('Error saving trip:', tripError);
+        throw tripError;
+      }
 
-            if (sessionError || !session) {
-                toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
-                navigate('/login');
-                return;
-            }
+      toast.success('¡Escapada generada exitosamente!');
+      
+      // 4. CORRECCIÓN: Redirigir a la página del viaje en vez de /my-bookings
+      navigate(`/trip/${tripData.id}`);
+      
+    } catch (error: any) {
+      console.error('Error completing wizard:', error);
+      toast.error(error.message || 'Hubo un error al generar tu escapada');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            // 2. PREPARAR DATOS
-            const isAI = formData.destination === "AI_ROUTE";
-            const isVATFree = formData.nationality !== "UY";
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
+      {/* Background decorativo */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500 rounded-full filter blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500 rounded-full filter blur-3xl" />
+      </div>
 
-            let tag = "DESTINY_SEEKER";
-            if (formData.companion === "SOLO") tag = "SOLO_EXPLORER";
-            if (formData.companion === "COUPLE") tag = "ROMANTIC_DUO";
-            if (formData.companion === "FAMILY") tag = "FAMILY_TRIBE";
-            if (formData.companion === "FRIENDS") tag = "SQUAD_GOALS";
-
-            // 3. GUARDAR PERFIL PSICOMÉTRICO (UPSERT)
-            const { data: profileData, error: profileError } = await supabase
-                .from('psychometric_profiles')
-                .upsert({
-                    user_id: session.user.id,
-                    openness: scores.openness ?? 0,
-                    conscientiousness: scores.conscientiousness ?? 0,
-                    extraversion: scores.extraversion ?? 0,
-                    agreeableness: scores.agreeableness ?? 0,
-                    stability: scores.stability ?? 0,
-                    companion_type: formData.companion,
-                    trip_duration: formData.duration,
-                    traveler_tag: tag,
-                    is_vat_free: isVATFree,
-                    ia_insight: JSON.stringify({
-                        full_name: formData.full_name,
-                        nationality: formData.nationality,
-                        destination_preference: formData.destination,
-                        generated_by_ai: isAI,
-                        dna_snapshot: scores
-                    }),
-                    updated_at: new Date().toISOString()
-                }, {
-                    onConflict: 'user_id'
-                })
-                .select();
-
-            if (profileError) {
-                console.error('❌ Error guardando perfil:', profileError);
-                toast.error(`Error al guardar perfil: ${profileError.message}`);
-                setLoading(false);
-                setStep(7); // Volver al paso anterior
-                return;
-            }
-
-            console.log('✅ Perfil psicométrico guardado:', profileData);
-
-            // 4. CREAR TRIP BÁSICO
-            const { data: tripData, error: tripError } = await supabase
-                .from('trips')
-                .insert([{
-                    user_id: session.user.id,
-                    status: 'confirmed',
-                    name: `Escapada ${formData.destination === 'AI_ROUTE' ? 'Sorpresa IA' : formData.destination}`,
-                    ia_insight: JSON.stringify({
-                        full_name: formData.full_name,
-                        dna_profile: scores,
-                        destination: formData.destination,
-                        companion: formData.companion,
-                        duration: formData.duration
-                    })
-                }])
-                .select();
-
-            if (tripError) {
-                console.error('⚠️ Error creando trip (no crítico):', tripError);
-                // No bloqueamos el flujo si falla el trip
-            } else {
-                console.log('✅ Trip creado:', tripData);
-            }
-
-            // 5. ÉXITO
-            toast.success('¡Perfil ADN guardado exitosamente!');
-            localStorage.setItem('wizard_completed', 'true');
-
-            setTimeout(() => {
-                navigate('/my-bookings');
-            }, 1500);
-
-        } catch (error: any) {
-            console.error('❌ Error inesperado:', error);
-            toast.error(`Error inesperado: ${error.message || 'Intenta de nuevo'}`);
-            setLoading(false);
-            setStep(7); // Volver al paso anterior
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-slate-950 text-white relative overflow-hidden flex items-center justify-center">
-            <SEOHead title="Protocolo ADN | EscapaUY" />
-
-            {/* BACKGROUND */}
-            <div className="absolute inset-0 z-0">
-                <img
-                    src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1920&q=80"
-                    className="w-full h-full object-cover opacity-20 blur-[30px] scale-105"
-                    alt="Background"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-slate-950" />
-            </div>
-
-            <main className="relative z-10 w-full max-w-4xl px-8 py-10 font-heading flex flex-col items-center">
-
-                {/* BACK BUTTON */}
-                {step !== 8 && (
-                    <button
-                        onClick={handleBack}
-                        className="absolute top-0 left-8 p-3 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all backdrop-blur-md z-50 flex items-center gap-2 group"
-                    >
-                        <ArrowRight className="rotate-180 group-hover:-translate-x-1 transition-transform" size={20} />
-                        <span className="text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Atrás</span>
-                    </button>
-                )}
-
-                <AnimatePresence mode="wait">
-
-                    {/* PASO 1: IDENTIDAD */}
-                    {step === 0 && (
-                        <motion.div
-                            key="identity"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            className="glass-morphism p-12 rounded-[3rem] border-white/5 bg-white/[0.02] text-center w-full max-w-2xl"
-                        >
-                            <div className="mb-10">
-                                <span className="text-gold-boutique font-mono font-black text-[10px] uppercase tracking-[0.4em] bg-gold-boutique/10 px-4 py-2 rounded-full border border-gold-boutique/20">Paso 1/4</span>
-                                <h1 className="text-5xl font-black uppercase tracking-tighter mt-6 mb-2 text-white">
-                                    Identidad <span className="text-gold-boutique italic font-serif">Fiscal</span>
-                                </h1>
-                                <p className="text-white/30 text-xs tracking-widest uppercase">Validación Ley 19.210</p>
-                            </div>
-
-                            <div className="space-y-6 text-left mb-10">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-4">Nombre Completo</label>
-                                    <input
-                                        type="text"
-                                        value={formData.full_name}
-                                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value.toUpperCase() })}
-                                        className="w-full bg-black/40 border border-white/10 rounded-[1.5rem] px-6 py-5 focus:border-gold-boutique focus:ring-1 focus:ring-gold-boutique transition-all outline-none font-bold tracking-wider placeholder:text-white/10"
-                                        placeholder="TU NOMBRE..."
-                                    />
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 ml-4">Residencia Fiscal</label>
-                                    <select
-                                        value={formData.nationality}
-                                        onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                                        className="w-full bg-black/40 border border-white/10 rounded-[1.5rem] px-6 py-5 focus:border-gold-boutique outline-none appearance-none font-bold tracking-wider"
-                                    >
-                                        <option value="" disabled className="bg-slate-900">SELECCIONAR PAÍS...</option>
-                                        {NATIONALITIES.map(n => (
-                                            <option key={n.code} value={n.code} className="bg-slate-900">{n.flag} {n.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={handleIdentitySubmit}
-                                className="w-full bg-gold-boutique text-black font-black py-6 rounded-[1.5rem] hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-[0.3em] text-xs flex items-center justify-center gap-3 shadow-lg shadow-gold-boutique/20"
-                            >
-                                Siguiente <ArrowRight size={16} />
-                            </button>
-                        </motion.div>
-                    )}
-
-                    {/* PASO 2: COMPAÑÍA */}
-                    {step === 1 && (
-                        <motion.div
-                            key="companion"
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            className="glass-morphism p-12 rounded-[3rem] border-white/5 bg-white/[0.02] text-center w-full max-w-3xl"
-                        >
-                            <div className="mb-10">
-                                <span className="text-gold-boutique font-mono font-black text-[10px] uppercase tracking-[0.4em] bg-gold-boutique/10 px-4 py-2 rounded-full border border-gold-boutique/20">Paso 2/4</span>
-                                <h1 className="text-5xl font-black uppercase tracking-tighter mt-6 mb-2 text-white">
-                                    Tu <span className="text-gold-boutique italic font-serif">Círculo</span>
-                                </h1>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 mb-10">
-                                {[
-                                    { id: 'SOLO', label: 'Solo', icon: <User size={32} /> },
-                                    { id: 'COUPLE', label: 'Pareja', icon: <div className="flex"><User size={28} /><User size={28} className="-ml-3 text-gold-boutique" /></div> },
-                                    { id: 'FAMILY', label: 'Familia', icon: <div className="flex items-end"><User size={24} /><User size={28} className="-ml-2" /><Baby size={20} className="-ml-1" /></div> },
-                                    { id: 'FRIENDS', label: 'Amigos', icon: <Users size={32} /> }
-                                ].map((opt) => (
-                                    <button
-                                        key={opt.id}
-                                        onClick={() => handleGroupSelect(opt.id)}
-                                        className={`p-6 rounded-[2rem] border transition-all flex flex-col items-center justify-center gap-3 group ${formData.companion === opt.id
-                                            ? 'bg-gold-boutique border-gold-boutique text-black shadow-xl'
-                                            : 'bg-white/5 border-white/5 text-white/50 hover:bg-white/10 hover:text-white'
-                                            }`}
-                                    >
-                                        <div className="mb-1 group-hover:scale-110 transition-transform duration-300">{opt.icon}</div>
-                                        <span className="block font-black text-sm uppercase tracking-wider">{opt.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-
-                            <button
-                                onClick={handleGroupSubmit}
-                                className="w-full bg-white text-black font-black py-6 rounded-[1.5rem] hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-[0.3em] text-xs flex items-center justify-center gap-3 shadow-lg"
-                            >
-                                Iniciar Test ADN <BrainCircuit size={16} />
-                            </button>
-                        </motion.div>
-                    )}
-
-                    {/* PASO 3-6: DNA TEST */}
-                    {step >= 2 && step <= 6 && (
-                        <motion.div
-                            key={`dna-${step}`}
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            className="glass-morphism p-12 md:p-16 rounded-[3rem] border-white/5 bg-white/[0.02] text-center w-full max-w-4xl"
-                        >
-                            <div className="mb-12">
-                                <span className="text-gold-boutique font-mono font-black text-[10px] uppercase tracking-[0.4em] bg-gold-boutique/10 px-4 py-2 rounded-full border border-gold-boutique/20">
-                                    ADN {DNA_QUESTIONS[step - 2].label}
-                                </span>
-                                <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mt-6 mb-8 text-white leading-tight">
-                                    {DNA_QUESTIONS[step - 2].question}
-                                </h2>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-8">
-                                {DNA_QUESTIONS[step - 2].options.map((opt, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => handleDnaAnswer(DNA_QUESTIONS[step - 2].trait, opt.value)}
-                                        className="h-64 rounded-[2.5rem] border border-white/10 bg-white/5 hover:bg-gold-boutique hover:border-gold-boutique hover:text-black transition-all group flex flex-col items-center justify-center gap-6 relative overflow-hidden"
-                                    >
-                                        <div className="scale-125 group-hover:scale-110 transition-transform text-white/50 group-hover:text-black">
-                                            {opt.icon}
-                                        </div>
-                                        <div className="relative z-10">
-                                            <span className="block text-2xl font-black uppercase tracking-tighter mb-1">{opt.label}</span>
-                                            <span className="block text-xs font-mono uppercase tracking-widest opacity-50 group-hover:opacity-100">{opt.sub}</span>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {/* PASO 7: LOGISTICS */}
-                    {step === 7 && (
-                        <motion.div
-                            key="logistics"
-                            initial={{ opacity: 0, x: 100 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -100 }}
-                            className="glass-morphism p-8 md:p-12 rounded-[3.5rem] border-white/5 bg-white/[0.02] text-center w-full max-w-4xl h-[85vh] flex flex-col"
-                        >
-                            <div className="flex-shrink-0 mb-6">
-                                <span className="text-gold-boutique font-mono font-black text-[10px] uppercase tracking-[0.4em] bg-gold-boutique/10 px-4 py-2 rounded-full border border-gold-boutique/20">Paso 4/4</span>
-                                <h1 className="text-4xl font-black uppercase tracking-tighter mt-4 text-white">
-                                    Diseño <span className="text-gold-boutique italic font-serif">Final</span>
-                                </h1>
-                            </div>
-
-                            <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar space-y-8">
-                                {/* DURATION */}
-                                <div className="space-y-4 px-4">
-                                    <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
-                                        <label className="text-xs font-black uppercase tracking-widest text-white/50">Estadía</label>
-                                        <span className="text-2xl font-black text-gold-boutique">{formData.duration} Días</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="1" max="7"
-                                        value={formData.duration}
-                                        onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
-                                        className="w-full accent-gold-boutique h-2 bg-white/10 rounded-full appearance-none cursor-pointer"
-                                    />
-                                </div>
-
-                                {/* DESTINATIONS */}
-                                <div className="space-y-4 text-left">
-                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/30 ml-2">Selección de Destino</h3>
-
-                                    {/* AI OPTION */}
-                                    <button
-                                        onClick={() => setFormData({ ...formData, destination: "AI_ROUTE" })}
-                                        className={`w-full p-6 rounded-[2rem] border transition-all flex items-center justify-between group relative overflow-hidden ${formData.destination === "AI_ROUTE"
-                                            ? 'bg-gradient-to-r from-violet-600 to-indigo-900 border-violet-400/50 text-white'
-                                            : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                                            }`}
-                                    >
-                                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 animate-pulse"></div>
-                                        <div className="flex items-center gap-5 relative z-10">
-                                            <div className={`p-4 rounded-full ${formData.destination === "AI_ROUTE" ? 'bg-white/20' : 'bg-slate-950'}`}>
-                                                <BrainCircuit size={24} className={formData.destination === "AI_ROUTE" ? "text-white animate-spin-slow" : "text-violet-400"} />
-                                            </div>
-                                            <div className="text-left">
-                                                <h3 className="font-black text-lg uppercase tracking-wider">Diseña mi ruta según mi ADN</h3>
-                                                <p className="text-[10px] opacity-70 font-mono mt-1">Algoritmo Genéticamente Personalizado</p>
-                                            </div>
-                                        </div>
-                                        {formData.destination === "AI_ROUTE" ? <CheckCircle2 className="text-emerald-400" /> : <div className="w-6 h-6 rounded-full border border-white/20" />}
-                                    </button>
-
-                                    {/* LIST */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {COLONIA_DESTINATIONS.map((dest) => (
-                                            <button
-                                                key={dest}
-                                                onClick={() => setFormData({ ...formData, destination: dest })}
-                                                className={`p-4 rounded-[1.5rem] border text-left transition-all flex items-center justify-between ${formData.destination === dest
-                                                    ? 'bg-gold-boutique border-gold-boutique text-black font-bold shadow-lg'
-                                                    : 'bg-black/20 border-white/5 text-slate-400 hover:text-white hover:bg-white/5 hover:border-white/20'
-                                                    }`}
-                                            >
-                                                <span className="text-xs uppercase tracking-wide leading-tight">{dest}</span>
-                                                {formData.destination === dest && <CheckCircle2 size={16} />}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex-shrink-0 pt-4 border-t border-white/5">
-                                <button
-                                    onClick={handleCompleteWizard}
-                                    disabled={!formData.destination || loading}
-                                    className="w-full bg-gradient-to-r from-gold-boutique to-[#C5A059] text-black font-black py-7 rounded-[2rem] hover:scale-[1.01] active:scale-95 transition-all shadow-2xl shadow-gold-boutique/10 uppercase tracking-[0.4em] text-xs flex items-center justify-center gap-4 group disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                                >
-                                    {loading ? 'Procesando...' : 'Confirmar Viaje'} <Zap size={18} className="group-hover:text-white transition-colors" />
-                                </button>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {/* PASO 8: PROCESSING */}
-                    {step === 8 && (
-                        <motion.div
-                            key="processing"
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="text-center bg-black/50 p-12 rounded-[3rem] border border-gold-boutique/20"
-                        >
-                            <div className="relative w-32 h-32 mx-auto mb-10">
-                                <div className="absolute inset-0 border-4 border-white/10 rounded-full" />
-                                <motion.div
-                                    className="absolute inset-0 border-4 border-t-gold-boutique rounded-full"
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                />
-                                <BrainCircuit className="absolute inset-0 m-auto text-gold-boutique" size={40} />
-                            </div>
-                            <h2 className="text-3xl font-black uppercase tracking-tighter text-white mb-2">Procesando ADN...</h2>
-                            <p className="text-white/40 text-xs font-mono uppercase tracking-widest mb-1">Decodificando 5 Dimensiones</p>
-                            <p className="text-emerald-400 text-[10px] font-mono uppercase tracking-widest animate-pulse">
-                                {formData.destination === 'AI_ROUTE' ?
-                                    'Algoritmo Generativo Activo' :
-                                    `Validando disponibilidad en ${formData.destination}`}
-                            </p>
-                        </motion.div>
-                    )}
-
-                </AnimatePresence>
-            </main>
+      {/* Contenido */}
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Header */}
+        <div className="p-6">
+          {step > 1 && (
+            <button
+              onClick={() => {
+                if (step === 3 && currentQuestion > 0) {
+                  setCurrentQuestion(currentQuestion - 1);
+                } else if (step === 4) {
+                  setStep(3);
+                  setCurrentQuestion(QUESTIONS.length - 1);
+                } else {
+                  setStep(step - 1);
+                }
+              }}
+              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>ATRÁS</span>
+            </button>
+          )}
         </div>
-    );
+
+        {/* Progress */}
+        <div className="px-6 mb-8">
+          <div className="text-center text-gray-400 text-sm mb-4">
+            PASO {step}/4
+          </div>
+          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-gold-500 to-gold-600"
+              initial={{ width: '0%' }}
+              animate={{ width: `${(step / 4) * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 px-6 pb-6">
+          <AnimatePresence mode="wait">
+            {/* Step 1: Identidad */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-md mx-auto"
+              >
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-white mb-2">
+                    IDENTIDAD <span className="text-gold-500">FISCAL</span>
+                  </h2>
+                  <p className="text-gray-400 text-sm">VALIDACIÓN LEY 19.210</p>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-white mb-2 text-sm">NOMBRE COMPLETO</label>
+                    <input
+                      type="text"
+                      placeholder="TU NOMBRE..."
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value.toUpperCase() })}
+                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-white mb-2 text-sm">RESIDENCIA FISCAL</label>
+                    <select
+                      value={formData.fiscalResidence}
+                      onChange={(e) => setFormData({ ...formData, fiscalResidence: e.target.value })}
+                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-gold-500"
+                    >
+                      <option value="" disabled>SELECCIONAR PAÍS...</option>
+                      <option value="Uruguay">🇺🇾 Uruguay</option>
+                               <option value="Argentina">🇦🇷 Argentina</option>
+                      <option value="Brasil">🇧🇷 Brasil</option>
+                      <option value="Internacional">🌎 Internacional</option>
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={handleNext}
+                    className="w-full py-3 bg-gold-500 hover:bg-gold-600 text-navy-900 font-bold rounded-lg transition-colors"
+                  >
+                    SIGUIENTE
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 2: Círculo de viaje */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-md mx-auto"
+              >
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-white mb-2">
+                    TU <span className="text-gold-500">CÍRCULO</span>
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <button
+                    onClick={() => setFormData({ ...formData, travelCircle: 'solo' })}
+                    className={`p-6 rounded-2xl border-2 transition-all ${
+                      formData.travelCircle === 'solo'
+                        ? 'border-gold-500 bg-gold-500/20'
+                        : 'border-white/20 bg-white/5 hover:border-white/40'
+                    }`}
+                  >
+                    <User className="w-8 h-8 text-gold-500 mx-auto mb-3" />
+                    <p className="text-white font-bold">SOLO</p>
+                  </button>
+
+                  <button
+                    onClick={() => setFormData({ ...formData, travelCircle: 'pareja' })}
+                    className={`p-6 rounded-2xl border-2 transition-all ${
+                      formData.travelCircle === 'pareja'
+                        ? 'border-gold-500 bg-gold-500/20'
+                        : 'border-white/20 bg-white/5 hover:border-white/40'
+                    }`}
+                  >
+                    <Heart className="w-8 h-8 text-gold-500 mx-auto mb-3" />
+                    <p className="text-white font-bold">PAREJA</p>
+                  </button>
+
+                  <button
+                    onClick={() => setFormData({ ...formData, travelCircle: 'familia' })}
+                    className={`p-6 rounded-2xl border-2 transition-all ${
+                      formData.travelCircle === 'familia'
+                        ? 'border-gold-500 bg-gold-500/20'
+                        : 'border-white/20 bg-white/5 hover:border-white/40'
+                    }`}
+                  >
+                    <Users className="w-8 h-8 text-gold-500 mx-auto mb-3" />
+                    <p className="text-white font-bold">FAMILIA</p>
+                  </button>
+
+                  <button
+                    onClick={() => setFormData({ ...formData, travelCircle: 'amigos' })}
+                    className={`p-6 rounded-2xl border-2 transition-all ${
+                      formData.travelCircle === 'amigos'
+                        ? 'border-gold-500 bg-gold-500/20'
+                        : 'border-white/20 bg-white/5 hover:border-white/40'
+                    }`}
+                  >
+                    <UsersRound className="w-8 h-8 text-gold-500 mx-auto mb-3" />
+                    <p className="text-white font-bold">AMIGOS</p>
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleNext}
+                  disabled={!formData.travelCircle}
+                  className="w-full py-3 bg-gold-500 hover:bg-gold-600 text-navy-900 font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  INICIAR TEST ADN
+                </button>
+              </motion.div>
+            )}
+
+            {/* Step 3: Preguntas psicométricas */}
+            {step === 3 && (
+              <motion.div
+                key={`question-${currentQuestion}`}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-2xl mx-auto"
+              >
+                <div className="text-center mb-6">
+                  <p className="text-gold-500 text-sm mb-2">ADN</p>
+                  <p className="text-gray-400 text-sm mb-4">{QUESTIONS[currentQuestion].dimension}</p>
+                  <h2 className="text-2xl font-bold text-white mb-8">
+                    {QUESTIONS[currentQuestion].question}
+                  </h2>
+                </div>
+
+                <div className="space-y-4">
+                  {QUESTIONS[currentQuestion].options.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleQuestionAnswer(QUESTIONS[currentQuestion].id, option.value)}
+                      className={`w-full p-6 rounded-2xl border-2 text-left transition-all ${
+                        formData.answers[QUESTIONS[currentQuestion].id] === option.value
+                          ? 'border-gold-500 bg-gold-500/20'
+                          : 'border-white/20 bg-white/5 hover:border-white/40'
+                      }`}
+                    >
+                      <p className="text-white font-bold text-lg mb-1">{option.label}</p>
+                      <p className="text-gray-400 text-sm">{option.sublabel}</p>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 4: Selección final */}
+            {step === 4 && (
+              <motion.div
+                key="step4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="max-w-2xl mx-auto"
+              >
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-white mb-2">
+                    DISEÑO <span className="text-gold-500">FINAL</span>
+                  </h2>
+                </div>
+
+                {/* Slider de días */}
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-white">ESTADÍA</p>
+                    <p className="text-gold-500 font-bold">{formData.days} Días</p>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="7"
+                    value={formData.days}
+                    onChange={(e) => setFormData({ ...formData, days: parseInt(e.target.value) })}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-gold-500"
+                  />
+                </div>
+
+                {/* Selección de destino */}
+                <div className="mb-8">
+                  <h3 className="text-white font-bold mb-4">SELECCIÓN DE DESTINO</h3>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {DESTINATIONS.map((dest) => {
+                      const Icon = dest.icon;
+                      return (
+                        <button
+                          key={dest.id}
+                          onClick={() => setFormData({ ...formData, destination: dest.id })}
+                          className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between ${
+                            formData.destination === dest.id
+                              ? 'border-gold-500 bg-gold-500/20'
+                              : dest.special
+                              ? 'border-purple-500/50 bg-purple-500/10 hover:border-purple-500'
+                              : 'border-white/20 bg-white/5 hover:border-white/40'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon className={`w-5 h-5 ${dest.special ? 'text-purple-500' : 'text-gold-500'}`} />
+                            <div>
+                              <p className={`font-bold text-sm ${dest.special ? 'text-purple-400' : 'text-white'}`}>
+                                {dest.name}
+                              </p>
+                              {dest.subtitle && (
+                                <p className="text-xs text-gray-400">{dest.subtitle}</p>
+                              )}
+                            </div>
+                          </div>
+                          {formData.destination === dest.id && (
+                            <Check className="w-5 h-5 text-gold-500" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Botón confirmar */}
+                <button
+                  onClick={handleComplete}
+                  disabled={!formData.destination || loading}
+                  className="w-full py-4 bg-gold-500 hover:bg-gold-600 text-navy-900 font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-navy-900"></div>
+                      <span>PROCESANDO ADN...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      <span>CONFIRMAR VIAJE</span>
+                    </>
+                  )}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Loading overlay */}
+      {loading && (
+        <div className="fixed inset-0 bg-navy-900/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="text-center">
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <div className="absolute inset-0 border-4 border-gold-500/20 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-gold-500 border-t-transparent rounded-full animate-spin"></div>
+              <Sparkles className="absolute inset-0 m-auto w-10 h-10 text-gold-500" />
+            </div>
+            <p className="text-white text-xl font-bold mb-2">PROCESANDO ADN...</p>
+            <p className="text-gray-400 text-sm">DECODIFICANDO 5 DIMENSIONES</p>
+            <p className="text-gray-500 text-xs mt-1">ALGORITMO GENERATIVO ACTIVO</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
+             

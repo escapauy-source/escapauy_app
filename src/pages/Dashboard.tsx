@@ -1,130 +1,243 @@
-﻿import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase"; 
-import { MapPin, Clock, Star, Shield, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+﻿import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { ArrowRight, Sparkles, MapPin, Calendar, LogOut, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-const Dashboard = () => {
-  const [trips, setTrips] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function Dashboard() {
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [trips, setTrips] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTrips = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("trips")
-          .select("*")
-          .eq("status", "active");
+    if (user) {
+      loadTrips();
+    } else {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
-        if (error || !data || data.length === 0) {
-          // Datos de respaldo para que la página NUNCA se vea vacía
-          setTrips([
-            {
-              id: '1',
-              title: 'Experiencia Boutique Colina',
-              location: 'Maldonado, UY',
-              duration: 'Full Day',
-              price: 150,
-              description: 'Una cata exclusiva con los mejores licores y vistas panorámicas.',
-              image_url: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&q=80'
-            },
-            {
-              id: '2',
-              title: 'Escapada Romántica Gold',
-              location: 'Punta del Este',
-              duration: '2 Días',
-              price: 450,
-              description: 'Lujo y confort en la costa uruguaya con atención personalizada.',
-              image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80'
-            }
-          ] );
-        } else {
-          setTrips(data);
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      } finally {
-        setLoading(false);
+  const loadTrips = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      const { data, error: tripsError } = await supabase
+        .from('trips')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (tripsError) {
+        console.error('Error loading trips:', tripsError);
+        setTrips([]);
+      } else {
+        setTrips(data || []);
       }
-    };
+    } catch (err) {
+      console.error('Error loading trips:', err);
+      setTrips([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchTrips();
-  }, []);
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success('Sesión cerrada correctamente');
+      navigate('/');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      toast.error('Error al cerrar sesión');
+    }
+  };
+
+  const upcomingTrips = trips.filter(trip => 
+    trip.status === 'generated' || trip.status === 'confirmed'
+  ).length;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white pb-20 font-sans">
-      {/* Header con Dorado Boutique */}
-      <header className="border-b border-[#C5A059]/40 bg-black/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 border-2 border-[#C5A059] rotate-45 flex items-center justify-center">
-              <span className="text-[#C5A059] font-bold -rotate-45">E</span>
+    <div className="min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900">
+      <header className="border-b border-white/10 bg-navy-900/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-gold-400 to-gold-600 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-navy-900" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white">EscapaUY</h1>
+                <p className="text-sm text-gray-400">Dashboard Premium</p>
+              </div>
             </div>
-            <h1 className="text-2xl font-serif font-bold tracking-tighter bg-gradient-to-r from-[#C5A059] via-[#F5E6AD] to-[#C5A059] bg-clip-text text-transparent">
-              ESCAPA UY
-            </h1>
+            
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all border border-white/10 hover:border-gold-500/50"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Cerrar Sesión</span>
+            </button>
           </div>
-          <button 
-            className="px-5 py-2 rounded-full border border-[#C5A059] text-[#C5A059] hover:bg-[#C5A059] hover:text-black transition-all duration-500 text-sm font-bold tracking-widest uppercase"
-            onClick={() => navigate("/my-bookings")}
-          >
-            Mis Reservas
-          </button>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-12">
-        <section className="mb-16 text-center">
-          <h2 className="text-5xl font-serif font-bold mb-4 text-white">Descubre tu próxima aventura</h2>
-          <div className="w-24 h-1 bg-[#C5A059] mx-auto mb-6"></div>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto italic">Experiencias exclusivas seleccionadas para los paladares más exigentes.</p>
-        </section>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">
+            Bienvenido, {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Viajero'}!
+          </h2>
+          <p className="text-gray-400">
+            Tu próxima escapada perfecta te está esperando
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-          {trips.map((trip) => (
-            <div 
-              key={trip.id} 
-              className="group relative bg-[#0A0A0A] border border-[#C5A059]/20 hover:border-[#C5A059]/60 transition-all duration-700 rounded-none overflow-hidden cursor-pointer"
-              onClick={() => navigate(`/trip/${trip.id}`)}
-            >
-              {/* Imagen con Overlay Dorado */}
-              <div className="relative h-72 overflow-hidden">
-                <img src={trip.image_url} alt={trip.title} className="w-full h-full object-cover grayscale-[0.3] group-hover:grayscale-0 group-hover:scale-110 transition-transform duration-1000" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
-                <div className="absolute top-6 right-6 bg-black/60 backdrop-blur-md border border-[#C5A059]/50 px-4 py-1">
-                  <span className="text-[#C5A059] font-serif text-xl font-bold">${trip.price}</span>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <motion.div
+            className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gold-500/20 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-gold-500" />
               </div>
-
-              {/* Contenido con Estilo Boutique */}
-              <div className="p-8 border-t border-[#C5A059]/10">
-                <div className="flex items-center gap-2 mb-3">
-                  <Shield className="w-4 h-4 text-[#C5A059]" />
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-[#C5A059]">Experiencia Verificada</span>
-                </div>
-                <h3 className="text-2xl font-serif font-bold mb-4 group-hover:text-[#C5A059] transition-colors duration-500">{trip.title}</h3>
-                
-                <div className="flex items-center text-gray-500 text-xs mb-6 gap-6 uppercase tracking-widest">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#C5A059]" />
-                    {trip.location}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#C5A059]" />
-                    {trip.duration}
-                  </div>
-                </div>
-
-                <button className="w-full py-4 border border-[#C5A059]/30 bg-transparent group-hover:bg-[#C5A059] group-hover:text-black transition-all duration-500 text-xs font-bold uppercase tracking-[0.3em] flex items-center justify-center gap-2">
-                  Explorar Detalles <ChevronRight className="w-4 h-4" />
-                </button>
+              <div>
+                <p className="text-gray-400 text-sm">VIAJES</p>
+                <p className="text-3xl font-bold text-gold-500">{trips.length}</p>
               </div>
             </div>
-          ))}
+          </motion.div>
+
+          <motion.div
+            className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-cyan-500/20 rounded-xl flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-cyan-500" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">PRÓXIMOS</p>
+                <p className="text-3xl font-bold text-cyan-500">{upcomingTrips}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-6"
+            whileHover={{ scale: 1.02 }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                <MapPin className="w-6 h-6 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">DESTINOS</p>
+                <p className="text-3xl font-bold text-purple-500">
+                  {[...new Set(trips.map(t => t.destination))].filter(Boolean).length || 0}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        <motion.button
+          onClick={() => navigate('/wizard')}
+          className="w-full mb-8 p-6 bg-gradient-to-r from-gold-500 to-gold-600 rounded-2xl text-navy-900 hover:from-gold-600 hover:to-gold-700 transition-all shadow-xl hover:shadow-2xl flex items-center justify-between group"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-navy-900/20 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div className="text-left">
+              <h3 className="text-xl font-bold mb-1">Crear Nueva Escapada</h3>
+              <p className="text-navy-800">
+                Déjanos crear tu experiencia perfecta
+              </p>
+            </div>
+          </div>
+          <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+        </motion.button>
+        <div>
+          <h3 className="text-2xl font-bold text-white mb-6">Mis Escapadas</h3>
+          
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mx-auto"></div>
+              <p className="text-gray-400 mt-4">Cargando tus escapadas...</p>
+            </div>
+          ) : trips.length === 0 ? (
+            <div className="text-center py-12 bg-white/5 rounded-2xl border border-white/10">
+              <Sparkles className="w-12 h-12 text-gold-500 mx-auto mb-4" />
+              <p className="text-gray-400 mb-4">
+                Aún no tienes escapadas creadas
+              </p>
+              <button
+                onClick={() => navigate('/wizard')}
+                className="px-6 py-3 bg-gold-500 text-navy-900 rounded-lg hover:bg-gold-600 transition-colors font-medium"
+              >
+                Crear Mi Primera Escapada
+              </button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {trips.map((trip) => (
+                <motion.div
+                  key={trip.id}
+                  onClick={() => navigate(`/trip/${trip.id}`)}
+                  className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden hover:border-gold-500/50 transition-all group cursor-pointer"
+                  whileHover={{ y: -4 }}
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <h4 className="text-lg font-bold text-white group-hover:text-gold-500 transition-colors">
+                        {trip.destination || 'Escapada'}
+                      </h4>
+                      <span className="px-3 py-1 bg-gold-500/20 text-gold-500 rounded-full text-xs font-medium">
+                        {trip.status === 'generated' ? 'Generado' : trip.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3 text-sm text-gray-400">
+                      {trip.destination && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-gold-500" />
+                          <span>{trip.destination}</span>
+                        </div>
+                      )}
+                      {trip.dates && (
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gold-500" />
+                          <span>{trip.dates}</span>
+                        </div>
+                      )}
+                      {trip.created_at && (
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-gold-500" />
+                          <span>Creado {new Date(trip.created_at).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <button className="mt-6 w-full px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all flex items-center justify-center gap-2 group">
+                      <span>Ver Detalles</span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
   );
-};
-
-export default Dashboard;
+}
